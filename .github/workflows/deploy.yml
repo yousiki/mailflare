@@ -91,7 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           cp wrangler.jsonc "$RUNNER_TEMP/wrangler.prod.jsonc"
-          python3 -c 'from pathlib import Path; import os; p=Path(os.environ["RUNNER_TEMP"])/"wrangler.prod.jsonc"; s=p.read_text(); needle="\"database_name\": \"mailflare\","; replacement=needle+"\\n\\t\\t\\t\"database_id\": \""+os.environ["D1_DATABASE_ID"]+"\","; assert s.count(needle)==1; p.write_text(s.replace(needle,replacement))'
+          python3 -c 'from pathlib import Path; import os; p=Path(os.environ["RUNNER_TEMP"])/"wrangler.prod.jsonc"; s=p.read_text(); needle="\"database_name\": \"mailflare\","; replacement=needle+"\n\t\t\t\"database_id\": \""+os.environ["D1_DATABASE_ID"]+"\","; assert s.count(needle)==1; p.write_text(s.replace(needle,replacement))'
 
       - name: Apply D1 migrations
         run: npx wrangler d1 migrations apply DB --remote --config="$RUNNER_TEMP/wrangler.prod.jsonc"
