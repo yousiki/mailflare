@@ -124,6 +124,15 @@ jobs:
           } | with_entries(select(.value != null and .value != ""))' > "$RUNNER_TEMP/mailflare-secrets.json"
           chmod 600 "$RUNNER_TEMP/mailflare-secrets.json"
 
+      - name: Ensure Mailflare queues exist
+        run: |
+          set -euo pipefail
+          for queue in mailflare-inbound mailflare-outbound; do
+            if ! npx wrangler queues info "$queue" >/dev/null 2>&1; then
+              npx wrangler queues create "$queue"
+            fi
+          done
+
       - name: Deploy Worker and custom domain
         run: >-
           OPEN_NEXT_DEPLOY=true npx wrangler deploy
