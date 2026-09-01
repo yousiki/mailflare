@@ -1,42 +1,35 @@
-![](/public/icon-96.png)
+<p align="center">
+  <img src="/public/icon-96.png" alt="Mailflare" width="72" />
+</p>
 
 # Mailflare
 
-A self-hosted, AI-powered email inbox with custom domains, powered by Cloudflare
+Mailflare is a self-hosted email inbox for custom domains, built on Cloudflare.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/hieunc229/mailflare)
 
-![](/screenshot.png)
+![Mailflare inbox](/screenshot.png)
 
-### Roadmap
+## What you can do
 
-- [x] Domain onboarding through Cloudflare, including inbound Email Routing DNS and sending DNS setup.
-- [x] Domain removal cleanup for linked Cloudflare routing rules and sending subdomain resources.
-- [x] Mailbox creation with automatic Cloudflare Email Routing rules.
-- [x] Mailbox management with a grid view, mailbox detail page, and editable display name.
-- [x] Inbox, sent, drafts, spam, and trash folders backed by a shared mail list component.
-- [x] Popup composer with autosaved drafts and draft resume from the drafts folder.
-- [x] Outbound send API, API keys, message read status, spam/trash moves, and seeded demo data.
-- [x] Inbound and outbound attachments stored in R2 with authenticated downloads.
-- [x] Real-time new-email updates and in-app notifications over WebSockets.
-- [x] Search, filtering, and richer mailbox/folder counts.
-- [x] Attachment support and richer compose formatting.
-- [ ] Advanced routing rules for catch-all addresses, forwarding, reject/block rules, and priorities.
-- [ ] Webhook management UI and delivery retry visibility.
+- Connect domains and set up Cloudflare Email Routing from the dashboard.
+- Create personal and shared mailboxes with delegated access.
+- Send and receive email with attachments, rich formatting, signatures, and automatic replies.
+- Organize mail with search, custom folders, stars, snoozing, archive, spam, and trash.
+- Create routing rules to store, forward, reject, or categorize incoming messages.
+- Get real-time inbox updates and new-message notifications.
+- Import and export mail, manage contacts, and block unwanted senders.
+- Manage accounts, permissions, API keys, webhooks, audit logs, and database backups.
 
-#### Email agent
+## How it works
 
-- [ ] Message intelligence with summaries, intent classification, urgency scoring, and extracted entities.
-- [ ] Agent task queue for proposed replies, follow-ups, triage actions, and missing-information requests.
-- [ ] Human-approved actions for draft replies, folder moves, forwarding, contact creation, and webhook calls.
-- [ ] Agent rules for learned post-receipt policies such as prioritization, auto-triage, and reply templates.
-- [ ] Agent inbox view organized by action state, including needs reply, waiting on me, waiting on them, FYI, auto-handled, and needs approval.
-- [ ] Thread and contact memory for prior summaries, user preferences, relationship notes, commitments, and open loops.
-- [ ] Tool execution for trusted actions such as sending email, creating drafts, updating message status, calling webhooks, and creating contacts.
+Mailflare runs in your Cloudflare account. Email Routing delivers incoming messages to the app, while Cloudflare's email service handles outgoing messages. Your mail data stays in your own D1 database and attachments are stored in your own R2 bucket.
 
-## Domain API
+## How much does it cost?
 
-Domains are **not** dashboard-only. This app calls Cloudflare when you add/remove a domain:
+You can setup Mailflare and receive email for free
+
+A [Paid Worker](https://developers.cloudflare.com/workers/platform/pricing/) plan ($5/month) is required to send email (and it's recommend to have a smooth experience)
 
 | Action                               | Cloudflare API                                           |
 | ------------------------------------ | -------------------------------------------------------- |
@@ -47,49 +40,36 @@ Domains are **not** dashboard-only. This app calls Cloudflare when you add/remov
 | Remove subdomain sending             | `DELETE /zones/{zone_id}/email/sending/subdomains/{tag}` |
 | Subdomain sending DNS records        | `GET .../subdomains/{tag}/dns`                           |
 
-**Requirements:** Prefer `CF_TOKEN` with Zone Read + Email Routing Edit + Email Sending Edit + Email Routing Rules Write (or broader). If you use a legacy Global API Key instead, set `CF_API_KEY` and `CF_EMAIL`. The hostname must be the account's Cloudflare zone apex or a subdomain under that zone. Root-domain sending uses the Cloudflare Email Service binding, while subdomain sending can also provision the sending-subdomain DNS records. Mailbox creation creates a Cloudflare Email Routing rule that sends that address to `CF_EMAIL_WORKER_NAME`.
+## Deploy
 
-App routes:
+The easiest way to get started is with the **Deploy to Cloudflare** button above. You will need:
 
-- `GET/POST /api/domains` — list / add (calls Cloudflare)
-- `GET/DELETE /api/domains/[id]` — get / remove (disables routing & sending on CF)
-- `GET /api/domains/[id]/dns` — routing + sending DNS snapshot
+- A Cloudflare account.
+- A domain managed by Cloudflare.
+- A Cloudflare API token that Mailflare can use to configure email routing.
 
-## Setup
+After deployment, open your Mailflare URL and follow the first-run setup. The setup checks your Cloudflare configuration, creates the initial account, and helps you connect your first domain.
+
+See the [deployment guide](docs/deployment.md) for required permissions, manual deployment, backups, updates, and custom Worker names.
+
+## Local development
 
 ```bash
 cp .dev.vars.example .dev.vars
-# Add CF_TOKEN and optionally CF_AID.
-# For a legacy Global API Key, use CF_API_KEY + CF_EMAIL instead.
-
 npm install
 npm run db:migrate:local
 npm run dev
 ```
 
-### Attachments
+Add your Cloudflare credentials to `.dev.vars`, then open [http://localhost:3000](http://localhost:3000). For sample local data, run `npm run db:seed` while the development server is running.
 
-The dashboard composer accepts up to 10 attachments, with a 10 MB per-file limit and a 20 MB
-combined limit. Attachment metadata is stored in D1 and file content is stored in the configured
-`BUCKET` R2 binding. Apply migration `0008_add_message_attachments.sql` before using attachments.
+## Documentation
 
-`POST /api/v1/send` accepts optional JSON attachments:
+- [Deployment and configuration](docs/deployment.md)
+- [API and integrations](docs/api.md)
+- [Troubleshooting](docs/troubleshooting.md)
 
-```json
-{
-  "from": "support@example.com",
-  "to": "user@example.net",
-  "subject": "Report",
-  "text": "Attached.",
-  "attachments": [
-    {
-      "filename": "report.pdf",
-      "type": "application/pdf",
-      "contentBase64": "<base64 data>"
-    }
-  ]
-}
-```
+## License
 
 Received MIME attachments are extracted automatically. Downloads require access to the mailbox
 containing the message.
@@ -148,7 +128,7 @@ environment variables:
 
 - `MAILFLARE_DOMAIN` — public Custom Domain, such as `mail.siki.moe`.
 - `CF_EMAIL_WORKER_NAME` — optional variable; defaults to `mailflare` and must match the
-  deployed Worker script name.
+deployed Worker script name.
 - `GITHUB_UPDATE_REF` — optional branch for the dashboard update workflow.
 - `GITHUB_UPDATE_REPO` — optional installation repository in `owner/repository` format.
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — optional public Turnstile site key.
@@ -157,17 +137,17 @@ Configure these GitHub Actions secrets:
 
 - `CLOUDFLARE_ACCOUNT_ID` — the YouSiki account ID.
 - `CLOUDFLARE_API_TOKEN` — CI token allowed to deploy Workers and manage the declared
-  Worker resources.
+Worker resources.
 - `D1_DATABASE_ID` — the account-specific ID of the `mailflare` D1 database.
 - `CF_TOKEN` — separate runtime token used by Mailflare's domain and Email Routing API
-  calls. It needs the permissions described in the setup section.
+calls. It needs the permissions described in the setup section.
 - `CF_AID` — account ID used by the backup workflow.
 - `D1_BACKUP_TOKEN` — optional token allowed to export the D1 database.
 - `TURNSTILE_SECRET_KEY` — optional Turnstile server secret.
 - `GITHUB_UPDATE_TOKEN` — optional GitHub token with Actions write permission for the
-  dashboard update button.
+dashboard update button.
 - `CF_EMAIL` and `CF_API_KEY` — optional legacy Global API Key credentials; use these only
-  instead of `CF_TOKEN`.
+instead of `CF_TOKEN`.
 
 The deployment workflow creates temporary production Wrangler and secret files on the
 GitHub runner. They are deleted after deployment. Do not commit either file or any of the
@@ -282,3 +262,5 @@ The optional `D1_DATABASE_ID` Actions secret can pin an existing database. If it
 the deployment workflow creates or discovers the `mailflare` D1 database automatically, then
 injects the resolved ID into a temporary Wrangler config. Do not commit an account-specific D1
 ID to this public repository.
+
+See [LICENSE](LICENSE).
