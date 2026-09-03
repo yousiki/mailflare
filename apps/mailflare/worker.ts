@@ -36,6 +36,8 @@ const modernRoutes: Record<string, true> = {
 	"/spam": true,
 	"/starred": true,
 	"/snoozed": true,
+	"/contacts": true,
+	"/folders": true,
 };
 const protectedRoutes: Record<string, true> = {
 	"/inbox": true,
@@ -49,6 +51,8 @@ const protectedRoutes: Record<string, true> = {
 	"/spam": true,
 	"/starred": true,
 	"/snoozed": true,
+	"/contacts": true,
+	"/folders": true,
 };
 
 async function handleRpc(request: Request, env: CloudflareEnv): Promise<Response> {

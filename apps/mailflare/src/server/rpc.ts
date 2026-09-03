@@ -2,7 +2,9 @@ import { ORPCError, os } from "@orpc/server";
 import { z } from "zod";
 import { sendEmail } from "../../../../src/lib/email/send";
 import { createMailflareAuth } from "./auth";
+import { listContactsForUser } from "./contacts";
 import { listDomainsForUser, provisionDomainForUser } from "./domains";
+import { listFoldersForUser } from "./folders";
 import { createMailboxForUser, listMailboxesForUser } from "./mailboxes";
 import { listMessagesForUser, type MessageFolder } from "./messages";
 import { requireAdmin } from "./policy";
@@ -14,12 +16,7 @@ export type MailflareRpcContext = {
 
 const rpc = os.$context<MailflareRpcContext>();
 const emptyInput = z.object({});
-const sessionUser = z.object({
-	id: z.string(),
-	email: z.email(),
-	name: z.string(),
-});
-
+const sessionUser = z.object({ id: z.string(), email: z.email(), name: z.string() });
 const withSession = rpc.use(async ({ context, next }) => {
 	const session = await createMailflareAuth(context.env).api.getSession({
 		headers: context.request.headers,
@@ -27,7 +24,6 @@ const withSession = rpc.use(async ({ context, next }) => {
 	if (!session) throw new ORPCError("UNAUTHORIZED", { message: "Sign in to continue." });
 	return next({ context: { session } });
 });
-
 const withAdmin = withSession.use(async ({ context, next }) => {
 	await requireAdmin(context.env, context.session.user.id);
 	return next();
@@ -146,12 +142,42 @@ const messageSendProcedure = withSession
 		sendEmail(context.env, { ...input, userId: context.session.user.id }),
 	);
 
+const contactsListProcedure = withSession
+	.route({ method: "POST", path: "/contacts/list" })
+	.input(emptyInput)
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				email: z.email(),
+				displayName: z.string().nullable(),
+				blocked: z.boolean(),
+				lastSeenAt: z.date().nullable(),
+			}),
+		),
+	)
+	.handler(({ context }) => listContactsForUser(context.env, context.session.user.id));
+
+const foldersListProcedure = withSession
+	.route({ method: "POST", path: "/folders/list" })
+	.input(z.object({ mailboxId: z.string().optional() }))
+	.output(
+		z.array(
+			z.object({ id: z.string(), mailboxId: z.string(), name: z.string(), color: z.string() }),
+		),
+	)
+	.handler(({ context, input }) =>
+		listFoldersForUser(context.env, context.session.user.id, input.mailboxId),
+	);
+
 export const rpcRouter = rpc.router({
 	health: healthProcedure,
 	auth: { me: authMeProcedure },
 	mailboxes: { list: mailboxListProcedure, create: mailboxCreateProcedure },
 	domains: { list: domainListProcedure, add: domainAddProcedure },
 	messages: { list: messageListProcedure, send: messageSendProcedure },
+	contacts: { list: contactsListProcedure },
+	folders: { list: foldersListProcedure },
 });
 
 export type MailflareRpcRouter = typeof rpcRouter;

@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ArchivedRouteImport } from './routes/archived'
 import { Route as ComposeRouteImport } from './routes/compose'
+import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as DraftsRouteImport } from './routes/drafts'
+import { Route as FoldersRouteImport } from './routes/folders'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -48,9 +50,19 @@ const ComposeRoute = ComposeRouteImport.update({
   path: '/compose',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactsRoute = ContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DraftsRoute = DraftsRouteImport.update({
   id: '/drafts',
   path: '/drafts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FoldersRoute = FoldersRouteImport.update({
+  id: '/folders',
+  path: '/folders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxRoute = InboxRouteImport.update({
@@ -124,7 +136,9 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/archived': typeof ArchivedRoute
   '/compose': typeof ComposeRoute
+  '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
+  '/folders': typeof FoldersRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -143,7 +157,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/archived': typeof ArchivedRoute
   '/compose': typeof ComposeRoute
+  '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
+  '/folders': typeof FoldersRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -164,7 +180,9 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/archived': typeof ArchivedRoute
   '/compose': typeof ComposeRoute
+  '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
+  '/folders': typeof FoldersRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -186,7 +204,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archived'
     | '/compose'
+    | '/contacts'
     | '/drafts'
+    | '/folders'
     | '/inbox'
     | '/login'
     | '/register'
@@ -205,7 +225,9 @@ export interface FileRouteTypes {
     | '/'
     | '/archived'
     | '/compose'
+    | '/contacts'
     | '/drafts'
+    | '/folders'
     | '/inbox'
     | '/login'
     | '/register'
@@ -225,7 +247,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archived'
     | '/compose'
+    | '/contacts'
     | '/drafts'
+    | '/folders'
     | '/inbox'
     | '/login'
     | '/register'
@@ -246,7 +270,9 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   ArchivedRoute: typeof ArchivedRoute
   ComposeRoute: typeof ComposeRoute
+  ContactsRoute: typeof ContactsRoute
   DraftsRoute: typeof DraftsRoute
+  FoldersRoute: typeof FoldersRoute
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
@@ -289,11 +315,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComposeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contacts': {
+      id: '/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof ContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/drafts': {
       id: '/drafts'
       path: '/drafts'
       fullPath: '/drafts'
       preLoaderRoute: typeof DraftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/folders': {
+      id: '/folders'
+      path: '/folders'
+      fullPath: '/folders'
+      preLoaderRoute: typeof FoldersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbox': {
@@ -409,7 +449,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   ArchivedRoute: ArchivedRoute,
   ComposeRoute: ComposeRoute,
+  ContactsRoute: ContactsRoute,
   DraftsRoute: DraftsRoute,
+  FoldersRoute: FoldersRoute,
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
