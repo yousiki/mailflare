@@ -5,10 +5,6 @@ import type { AppDatabase } from "@/db";
  * database argument for compatibility with existing access callers, but do not
  * gate access on the optional commercial license settings row.
  */
-export async function isTeamMailboxSharingEnabled(_db: AppDatabase): Promise<boolean> {
- try {
-  return true;
- } catch {
-  return false;
- }
+export function isTeamMailboxSharingEnabled(_db: AppDatabase): boolean {
+ return true;
 }

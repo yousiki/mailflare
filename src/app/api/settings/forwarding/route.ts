@@ -5,7 +5,6 @@ import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { requireUser } from "@/lib/auth/cookies";
 import { getEnv } from "@/lib/cloudflare";
-import { getLicenseEntitlements } from "@/lib/licenses/service";
 import type { UpdateForwardingEmailInput } from "./types";
 import { parseUpdateForwardingEmailRequest } from "./utils";
 
@@ -22,9 +21,6 @@ export async function PATCH(request: Request) {
 		return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 	}
 
-	if (!(await getLicenseEntitlements(env)).canForwardEmail) {
-		return NextResponse.json({ error: "A Pro or Team license is required for email forwarding" }, { status: 403 });
-	}
 
 	await getDb(env)
 		.update(users)
