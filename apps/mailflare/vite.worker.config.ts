@@ -10,6 +10,9 @@ export default defineConfig({
       "@": resolve(appRoot, "../../src"),
     },
   },
+  ssr: {
+    noExternal: true,
+  },
   build: {
     ssr: resolve(appRoot, "worker.ts"),
     outDir: resolve(appRoot, "dist/worker"),
