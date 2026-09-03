@@ -137,7 +137,9 @@ jobs:
           fi
 
           cleanup_config="$RUNNER_TEMP/mailflare-r2-cleanup-wrangler.jsonc"
-          printf '%s\n' '{"name":"mailflare-r2-cleanup","main":"scripts/r2-empty-worker.ts","compatibility_date":"2026-05-20","r2_buckets":[{"binding":"BUCKET","bucket_name":"mailflare-raw","remote":true}]}' > "$cleanup_config"
+          cat > "$cleanup_config" <<EOF
+          {"name":"mailflare-r2-cleanup","main":"${GITHUB_WORKSPACE}/scripts/r2-empty-worker.ts","compatibility_date":"2026-05-20","r2_buckets":[{"binding":"BUCKET","bucket_name":"mailflare-raw","remote":true}]}
+          EOF
           cleanup_pid=""
           cleanup_log="$RUNNER_TEMP/mailflare-r2-empty.log"
           cleanup_config_path="$cleanup_config"
