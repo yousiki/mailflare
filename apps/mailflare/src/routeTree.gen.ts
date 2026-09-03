@@ -17,6 +17,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminDomainsRouteImport } from './routes/admin/domains'
 import { Route as AdminMailboxesRouteImport } from './routes/admin/mailboxes'
 
@@ -60,6 +61,11 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDomainsRoute = AdminDomainsRouteImport.update({
   id: '/domains',
   path: '/domains',
@@ -82,10 +88,10 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/compose': typeof ComposeRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +114,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,10 +129,10 @@ export interface FileRouteTypes {
     | '/setup'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/compose'
     | '/inbox'
     | '/login'
@@ -133,6 +141,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -216,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/domains': {
       id: '/admin/domains'
       path: '/domains'
@@ -236,11 +253,13 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminDomainsRoute: typeof AdminDomainsRoute
   AdminMailboxesRoute: typeof AdminMailboxesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDomainsRoute: AdminDomainsRoute,
   AdminMailboxesRoute: AdminMailboxesRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
