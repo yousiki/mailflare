@@ -10,11 +10,39 @@ export type InitialAdministrator = {
 	password: string;
 };
 
+export type ApplicationUser = {
+	id: string;
+	email: string;
+	name: string;
+	password: string;
+	role?: "admin" | "user";
+};
+
 export class SetupAlreadyCompletedError extends Error {
 	constructor() {
 		super("Mailflare setup has already been completed.");
 		this.name = "SetupAlreadyCompletedError";
 	}
+}
+
+export async function ensureApplicationUser(env: CloudflareEnv, user: ApplicationUser) {
+	const db = getDb(env);
+	const [existing] = await db
+		.select({ id: users.id })
+		.from(users)
+		.where(eq(users.id, user.id))
+		.limit(1);
+	if (existing) return existing;
+
+	await db.insert(users).values({
+		id: user.id,
+		email: user.email,
+		name: user.name,
+		passwordHash: hashPassword(user.password),
+		role: user.role ?? "user",
+		canManageMailboxes: user.role === "admin",
+	});
+	return { id: user.id };
 }
 
 export async function createInitialAdministrator(
@@ -25,15 +53,7 @@ export async function createInitialAdministrator(
 	const [existing] = await db.select({ id: users.id }).from(users).limit(1);
 	if (existing) throw new SetupAlreadyCompletedError();
 
-	await db.insert(users).values({
-		id: administrator.id,
-		email: administrator.email,
-		name: administrator.name,
-		passwordHash: hashPassword(administrator.password),
-		role: "admin",
-		canManageMailboxes: true,
-	});
-
+	await ensureApplicationUser(env, { ...administrator, role: "admin" });
 	const [created] = await db
 		.select({ id: users.id, email: users.email, name: users.name, role: users.role })
 		.from(users)

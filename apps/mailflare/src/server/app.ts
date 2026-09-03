@@ -1,7 +1,11 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { createMailflareAuth } from "./auth";
-import { createInitialAdministrator, SetupAlreadyCompletedError } from "./setup";
+import {
+	createInitialAdministrator,
+	ensureApplicationUser,
+	SetupAlreadyCompletedError,
+} from "./setup";
 
 export type MailflareBindings = CloudflareEnv;
 
@@ -22,6 +26,24 @@ const setupInput = z.object({
 
 export const app = new Hono<MailflareContext>()
 	.get("/api/health", (c) => c.json(healthResponse.parse({ service: "mailflare", status: "ok" })))
+	.post("/api/auth/sign-up/email", async (c) => {
+		try {
+			const input = setupInput.parse(await c.req.json());
+			const result = await createMailflareAuth(c.env).api.signUpEmail({
+				returnHeaders: true,
+				headers: c.req.raw.headers,
+				body: input,
+			});
+			await ensureApplicationUser(c.env, { ...input, id: result.response.user.id });
+			const response = Response.json(result.response, { status: 201 });
+			result.headers.forEach((value, key) => response.headers.append(key, value));
+			return response;
+		} catch (error) {
+			if (error instanceof z.ZodError)
+				return c.json({ error: "Invalid registration details." }, 400);
+			return c.json({ error: "Unable to create the account." }, 500);
+		}
+	})
 	.on(["GET", "POST"], "/api/auth/*", async (c) => {
 		const auth = createMailflareAuth(c.env);
 		return auth.handler(c.req.raw);
