@@ -17,8 +17,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
-import { Route as ApiHealthRouteImport } from './routes/api/health'
-import { Route as ApiRpcRouteImport } from './routes/api/rpc'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -60,16 +58,6 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiHealthRoute = ApiHealthRouteImport.update({
-  id: '/api/health',
-  path: '/api/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiRpcRoute = ApiRpcRouteImport.update({
-  id: '/api/rpc',
-  path: '/api/rpc',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,8 +68,6 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
-  '/api/health': typeof ApiHealthRoute
-  '/api/rpc': typeof ApiRpcRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -92,8 +78,6 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
-  '/api/health': typeof ApiHealthRoute
-  '/api/rpc': typeof ApiRpcRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,8 +89,6 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
-  '/api/health': typeof ApiHealthRoute
-  '/api/rpc': typeof ApiRpcRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -119,8 +101,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/settings'
     | '/setup'
-    | '/api/health'
-    | '/api/rpc'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -131,8 +111,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/settings'
     | '/setup'
-    | '/api/health'
-    | '/api/rpc'
   id:
     | '__root__'
     | '/'
@@ -143,8 +121,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/settings'
     | '/setup'
-    | '/api/health'
-    | '/api/rpc'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -156,8 +132,6 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
-  ApiHealthRoute: typeof ApiHealthRoute
-  ApiRpcRoute: typeof ApiRpcRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -218,20 +192,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/health': {
-      id: '/api/health'
-      path: '/api/health'
-      fullPath: '/api/health'
-      preLoaderRoute: typeof ApiHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/rpc': {
-      id: '/api/rpc'
-      path: '/api/rpc'
-      fullPath: '/api/rpc'
-      preLoaderRoute: typeof ApiRpcRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -244,8 +204,6 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
-  ApiHealthRoute: ApiHealthRoute,
-  ApiRpcRoute: ApiRpcRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
