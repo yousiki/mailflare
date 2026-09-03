@@ -93,8 +93,8 @@ an inbound message is stored. The inbox and unread counts refresh without waitin
 an in-app popup links directly to the new message. Mailbox owners, the domain admin, and delegated
 users receive events for mailboxes they can access.
 
-The `REALTIME` Durable Object binding and its initial migration are declared in `wrangler.jsonc`.
-Deploy with the GitHub Actions workflow so the Durable Object class is provisioned.
+The `RealtimeHub` Durable Object and `DatabaseBackupWorkflow` bindings are declared in
+`infra/alchemy.run.ts` and provisioned with the Worker.
 When the socket is temporarily unavailable, the client retries automatically and uses a slower
 fallback refresh until the connection recovers.
 
@@ -209,38 +209,34 @@ For Zone: DNS Settings:Edit, Email Routing Rules:Edit, Zone Settings:Edit, DNS:E
 
 ### Manual deploy
 
-For a local deployment, set the same values used by GitHub Actions and run:
+For a staging deployment, provide the same non-secret variables and protected secrets used by the
+GitHub Actions `production` Environment, then run:
 
 ```bash
-npx opennextjs-cloudflare build
-npx wrangler d1 migrations apply DB --remote
-OPEN_NEXT_DEPLOY=true npx wrangler deploy --domain "$MAILFLARE_DOMAIN"
+bun install --frozen-lockfile
+bun run --cwd apps/mailflare build
+bunx alchemy plan infra/alchemy.run.ts --stage staging
+bunx alchemy deploy infra/alchemy.run.ts --stage staging --yes
 ```
 
-The deploy script intentionally builds with OpenNext and uploads with Wrangler. Do not replace the
-Wrangler step with `opennextjs-cloudflare deploy`: Mailflare's `worker.ts` wrapper exports the
-`RealtimeHub` Durable Object and handles email and queue events in addition to the generated Next.js
-worker.
+### Cloudflare API authentication errors
 
-Prefer GitHub Actions for production deployment so the hostname, deployment token, runtime secrets,
-and account-specific D1 ID remain outside tracked files.
+The deployment token (`CLOUDFLARE_API_TOKEN`) is used only by CI and Alchemy. The runtime
+`CF_TOKEN` is a separate secret used when Mailflare provisions a user's domain and Email Routing.
+Do not put `Bearer` in the secret value, and do not commit either token.
 
-### Cloudflare D1 7404: database could not be found
+The runtime token needs account permissions for Email Sending and Email Routing, plus the zone
+permissions required for DNS and routing changes. If an API call returns `401`, `403`, or code
+`10000`, verify the token's account, scopes, expiry, and IP restrictions in Cloudflare. Then rerun
+the deployment so updated runtime secrets are bound to the Worker.
 
-If automatic deployment fails with:
+### D1 migration errors
 
-```text
-The database <uuid> could not be found [code: 7404]
-```
+Alchemy owns the migrations in `drizzle/alchemy-migrations`. The legacy Drizzle migration directory
+is retained for reference and is not used by the Alchemy stack. Do not point Alchemy at
+`drizzle/migrations/meta/_journal.json`; that is the pre-v1 Drizzle layout.
 
-Remove any committed `database_id` from `wrangler.jsonc`. D1 database IDs are account-specific;
-committing one from another account makes Wrangler look up a database that does not exist in the
-deploying account. This project declares the `DB` binding with `database_name` only so the resource
-can be provisioned for the target account.
-
-The optional `D1_DATABASE_ID` Actions secret can pin an existing database. If it is omitted,
-the deployment workflow creates or discovers the `mailflare` D1 database automatically, then
-injects the resolved ID into a temporary Wrangler config. Do not commit an account-specific D1
-ID to this public repository.
+The issue #2 installation intentionally creates a fresh D1 database. Existing users, sessions,
+passwords, and business data are not migrated.
 
 See [LICENSE](LICENSE).

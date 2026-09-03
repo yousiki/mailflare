@@ -5,6 +5,7 @@ import { createMailflareAuth } from "./auth";
 import { listDomainsForUser, provisionDomainForUser } from "./domains";
 import { createMailboxForUser, listMailboxesForUser } from "./mailboxes";
 import { listMessagesForUser } from "./messages";
+import { requireAdmin } from "./policy";
 
 export type MailflareRpcContext = {
 	env: CloudflareEnv;
@@ -25,6 +26,11 @@ const withSession = rpc.use(async ({ context, next }) => {
 	});
 	if (!session) throw new ORPCError("UNAUTHORIZED", { message: "Sign in to continue." });
 	return next({ context: { session } });
+});
+
+const withAdmin = withSession.use(async ({ context, next }) => {
+	await requireAdmin(context.env, context.session.user.id);
+	return next();
 });
 
 export const healthProcedure = rpc
@@ -64,7 +70,7 @@ export const domainListProcedure = withSession
 	)
 	.handler(({ context }) => listDomainsForUser(context.env, context.session.user.id));
 
-export const domainAddProcedure = withSession
+export const domainAddProcedure = withAdmin
 	.route({ method: "POST", path: "/domains/add" })
 	.input(z.object({ hostname: z.string().trim().min(3).max(253) }))
 	.output(
@@ -78,7 +84,7 @@ export const domainAddProcedure = withSession
 		provisionDomainForUser(context.env, context.session.user.id, input.hostname),
 	);
 
-export const mailboxCreateProcedure = withSession
+export const mailboxCreateProcedure = withAdmin
 	.route({ method: "POST", path: "/mailboxes/create" })
 	.input(
 		z.object({

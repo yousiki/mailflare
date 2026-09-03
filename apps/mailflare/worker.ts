@@ -11,6 +11,7 @@ import { resolveInboundAddress } from "../../src/lib/email/routing";
 import { isInboundQueueMessage } from "../../worker-utils";
 import { app } from "./src/server/app";
 import { createMailflareAuth } from "./src/server/auth";
+import { getMailflareRole } from "./src/server/policy";
 import { rpcRouter } from "./src/server/rpc";
 import startHandler from "./dist/server/index.js";
 
@@ -49,6 +50,11 @@ async function hasSession(request: Request, env: CloudflareEnv): Promise<boolean
 	return session !== null;
 }
 
+async function hasAdminSession(request: Request, env: CloudflareEnv): Promise<boolean> {
+	const session = await createMailflareAuth(env).api.getSession({ headers: request.headers });
+	return session !== null && (await getMailflareRole(env, session.user.id)) === "admin";
+}
+
 export default {
 	async fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
 		const { pathname } = new URL(request.url);
@@ -60,19 +66,23 @@ export default {
 			return app.fetch(request, env);
 		}
 		if (pathname.startsWith("/api/rpc")) return handleRpc(request, env);
+
 		const isModernRoute =
 			modernRoutes[pathname] || pathname.startsWith("/admin/") || pathname.startsWith("/settings/");
-		if (isModernRoute) {
-			const isProtectedRoute =
-				protectedRoutes[pathname] ||
-				pathname.startsWith("/admin/") ||
-				pathname.startsWith("/settings/");
-			if (isProtectedRoute && !(await hasSession(request, env))) {
-				return Response.redirect(new URL("/login", request.url), 302);
-			}
-			return startHandler.fetch(request, env, ctx);
+		if (!isModernRoute) return new Response("Not Found", { status: 404 });
+
+		const isProtectedRoute =
+			protectedRoutes[pathname] ||
+			pathname.startsWith("/admin/") ||
+			pathname.startsWith("/settings/");
+		if (isProtectedRoute && !(await hasSession(request, env))) {
+			return Response.redirect(new URL("/login", request.url), 302);
 		}
-		return new Response("Not Found", { status: 404 });
+		const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+		if (isAdminRoute && !(await hasAdminSession(request, env))) {
+			return new Response("Forbidden", { status: 403 });
+		}
+		return startHandler.fetch(request, env, ctx);
 	},
 
 	async email(message: ForwardableEmailMessage, env: CloudflareEnv) {
