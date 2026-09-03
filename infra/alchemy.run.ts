@@ -1,7 +1,7 @@
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Redacted from "effect/Redacted";
 import * as Effect from "effect/Effect";
+import * as Redacted from "effect/Redacted";
 
 const domain = process.env.MAILFLARE_DOMAIN;
 if (!domain && process.env.ALCHEMY_STAGE === "production") {
@@ -10,7 +10,7 @@ if (!domain && process.env.ALCHEMY_STAGE === "production") {
 
 export default Alchemy.Stack(
   "Mailflare",
-  { providers: Cloudflare.providers(), state: Cloudflare.state() },
+  { providers: Cloudflare.providers(), state: Alchemy.localState() },
   Effect.gen(function*() {
     const database = yield* Cloudflare.D1.Database("MailflareDatabase", {
       name: "mailflare",
