@@ -28,12 +28,26 @@ const modernRoutes: Record<string, true> = {
 	"/settings": true,
 	"/admin": true,
 	"/compose": true,
+	"/sent": true,
+	"/drafts": true,
+	"/archived": true,
+	"/trash": true,
+	"/spam": true,
+	"/starred": true,
+	"/snoozed": true,
 };
 const protectedRoutes: Record<string, true> = {
 	"/inbox": true,
 	"/settings": true,
 	"/admin": true,
 	"/compose": true,
+	"/sent": true,
+	"/drafts": true,
+	"/archived": true,
+	"/trash": true,
+	"/spam": true,
+	"/starred": true,
+	"/snoozed": true,
 };
 
 async function handleRpc(request: Request, env: CloudflareEnv): Promise<Response> {

@@ -4,7 +4,7 @@ import { sendEmail } from "../../../../src/lib/email/send";
 import { createMailflareAuth } from "./auth";
 import { listDomainsForUser, provisionDomainForUser } from "./domains";
 import { createMailboxForUser, listMailboxesForUser } from "./mailboxes";
-import { listMessagesForUser } from "./messages";
+import { listMessagesForUser, type MessageFolder } from "./messages";
 import { requireAdmin } from "./policy";
 
 export type MailflareRpcContext = {
@@ -100,7 +100,14 @@ export const mailboxCreateProcedure = withAdmin
 
 const messageListProcedure = withSession
 	.route({ method: "POST", path: "/messages/list" })
-	.input(z.object({ mailboxId: z.string().optional() }))
+	.input(
+		z.object({
+			mailboxId: z.string().optional(),
+			folder: z
+				.enum(["inbox", "sent", "drafts", "archived", "trash", "spam", "starred", "snoozed"])
+				.optional(),
+		}),
+	)
 	.output(
 		z.array(
 			z.object({
@@ -117,7 +124,10 @@ const messageListProcedure = withSession
 		),
 	)
 	.handler(({ context, input }) =>
-		listMessagesForUser(context.env, context.session.user.id, input.mailboxId),
+		listMessagesForUser(context.env, context.session.user.id, {
+			mailboxId: input.mailboxId,
+			folder: input.folder as MessageFolder | undefined,
+		}),
 	);
 
 const messageSendProcedure = withSession

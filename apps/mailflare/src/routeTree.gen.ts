@@ -11,12 +11,19 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ArchivedRouteImport } from './routes/archived'
 import { Route as ComposeRouteImport } from './routes/compose'
+import { Route as DraftsRouteImport } from './routes/drafts'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as SentRouteImport } from './routes/sent'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as SnoozedRouteImport } from './routes/snoozed'
+import { Route as SpamRouteImport } from './routes/spam'
+import { Route as StarredRouteImport } from './routes/starred'
+import { Route as TrashRouteImport } from './routes/trash'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminDomainsRouteImport } from './routes/admin/domains'
 import { Route as AdminMailboxesRouteImport } from './routes/admin/mailboxes'
@@ -31,9 +38,19 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArchivedRoute = ArchivedRouteImport.update({
+  id: '/archived',
+  path: '/archived',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComposeRoute = ComposeRouteImport.update({
   id: '/compose',
   path: '/compose',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DraftsRoute = DraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxRoute = InboxRouteImport.update({
@@ -51,6 +68,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SentRoute = SentRouteImport.update({
+  id: '/sent',
+  path: '/sent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -59,6 +81,26 @@ const SettingsRoute = SettingsRouteImport.update({
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SnoozedRoute = SnoozedRouteImport.update({
+  id: '/snoozed',
+  path: '/snoozed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpamRoute = SpamRouteImport.update({
+  id: '/spam',
+  path: '/spam',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StarredRoute = StarredRouteImport.update({
+  id: '/starred',
+  path: '/starred',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrashRoute = TrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -80,24 +122,38 @@ const AdminMailboxesRoute = AdminMailboxesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/archived': typeof ArchivedRoute
   '/compose': typeof ComposeRoute
+  '/drafts': typeof DraftsRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/sent': typeof SentRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/snoozed': typeof SnoozedRoute
+  '/spam': typeof SpamRoute
+  '/starred': typeof StarredRoute
+  '/trash': typeof TrashRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/archived': typeof ArchivedRoute
   '/compose': typeof ComposeRoute
+  '/drafts': typeof DraftsRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/sent': typeof SentRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/snoozed': typeof SnoozedRoute
+  '/spam': typeof SpamRoute
+  '/starred': typeof StarredRoute
+  '/trash': typeof TrashRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
   '/admin': typeof AdminIndexRoute
@@ -106,12 +162,19 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/archived': typeof ArchivedRoute
   '/compose': typeof ComposeRoute
+  '/drafts': typeof DraftsRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/sent': typeof SentRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/snoozed': typeof SnoozedRoute
+  '/spam': typeof SpamRoute
+  '/starred': typeof StarredRoute
+  '/trash': typeof TrashRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
   '/admin/': typeof AdminIndexRoute
@@ -121,24 +184,38 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/archived'
     | '/compose'
+    | '/drafts'
     | '/inbox'
     | '/login'
     | '/register'
+    | '/sent'
     | '/settings'
     | '/setup'
+    | '/snoozed'
+    | '/spam'
+    | '/starred'
+    | '/trash'
     | '/admin/domains'
     | '/admin/mailboxes'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/archived'
     | '/compose'
+    | '/drafts'
     | '/inbox'
     | '/login'
     | '/register'
+    | '/sent'
     | '/settings'
     | '/setup'
+    | '/snoozed'
+    | '/spam'
+    | '/starred'
+    | '/trash'
     | '/admin/domains'
     | '/admin/mailboxes'
     | '/admin'
@@ -146,12 +223,19 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/archived'
     | '/compose'
+    | '/drafts'
     | '/inbox'
     | '/login'
     | '/register'
+    | '/sent'
     | '/settings'
     | '/setup'
+    | '/snoozed'
+    | '/spam'
+    | '/starred'
+    | '/trash'
     | '/admin/domains'
     | '/admin/mailboxes'
     | '/admin/'
@@ -160,12 +244,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ArchivedRoute: typeof ArchivedRoute
   ComposeRoute: typeof ComposeRoute
+  DraftsRoute: typeof DraftsRoute
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  SentRoute: typeof SentRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
+  SnoozedRoute: typeof SnoozedRoute
+  SpamRoute: typeof SpamRoute
+  StarredRoute: typeof StarredRoute
+  TrashRoute: typeof TrashRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -184,11 +275,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/archived': {
+      id: '/archived'
+      path: '/archived'
+      fullPath: '/archived'
+      preLoaderRoute: typeof ArchivedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compose': {
       id: '/compose'
       path: '/compose'
       fullPath: '/compose'
       preLoaderRoute: typeof ComposeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/drafts': {
+      id: '/drafts'
+      path: '/drafts'
+      fullPath: '/drafts'
+      preLoaderRoute: typeof DraftsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbox': {
@@ -212,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sent': {
+      id: '/sent'
+      path: '/sent'
+      fullPath: '/sent'
+      preLoaderRoute: typeof SentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -224,6 +336,34 @@ declare module '@tanstack/react-router' {
       path: '/setup'
       fullPath: '/setup'
       preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/snoozed': {
+      id: '/snoozed'
+      path: '/snoozed'
+      fullPath: '/snoozed'
+      preLoaderRoute: typeof SnoozedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spam': {
+      id: '/spam'
+      path: '/spam'
+      fullPath: '/spam'
+      preLoaderRoute: typeof SpamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/starred': {
+      id: '/starred'
+      path: '/starred'
+      fullPath: '/starred'
+      preLoaderRoute: typeof StarredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trash': {
+      id: '/trash'
+      path: '/trash'
+      fullPath: '/trash'
+      preLoaderRoute: typeof TrashRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -267,12 +407,19 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  ArchivedRoute: ArchivedRoute,
   ComposeRoute: ComposeRoute,
+  DraftsRoute: DraftsRoute,
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  SentRoute: SentRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
+  SnoozedRoute: SnoozedRoute,
+  SpamRoute: SpamRoute,
+  StarredRoute: StarredRoute,
+  TrashRoute: TrashRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

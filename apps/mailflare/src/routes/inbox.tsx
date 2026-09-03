@@ -13,7 +13,6 @@ type MessageSummary = {
 	starred: boolean;
 	createdAt: string;
 };
-
 type RpcResult<T> = { json?: T; message?: string };
 
 export const Route = createFileRoute("/inbox")({ component: InboxPage });
@@ -40,15 +39,16 @@ function InboxPage() {
 		postRpc<MailboxSummary[]>("mailboxes/list", {})
 			.then(async (items) => {
 				setMailboxes(items);
-				const firstMailbox = items[0];
-				const loadedMessages = await postRpc<MessageSummary[]>("messages/list", {
-					mailboxId: firstMailbox?.id,
-				});
-				setMessages(loadedMessages);
+				setMessages(
+					await postRpc<MessageSummary[]>("messages/list", {
+						mailboxId: items[0]?.id,
+						folder: "inbox",
+					}),
+				);
 			})
-			.catch((cause: unknown) => {
-				setError(cause instanceof Error ? cause.message : "Unable to load inbox.");
-			});
+			.catch((cause: unknown) =>
+				setError(cause instanceof Error ? cause.message : "Unable to load inbox."),
+			);
 	}, []);
 
 	return (
@@ -64,7 +64,7 @@ function InboxPage() {
 			</div>
 			{error && <p role="alert">{error}</p>}
 			{messages?.length ? (
-				<section className="card message-list" aria-label="Messages">
+				<section className="card message-list" aria-label="Inbox messages">
 					{messages.map((message) => (
 						<article className="message-row" key={message.id}>
 							<div>
