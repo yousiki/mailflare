@@ -1,30 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { orpc } from "~/client/orpc";
 import type { MessageFolder } from "../server/messages";
-
-type Message = {
-	id: string;
-	from: string;
-	to: string;
-	subject: string;
-	snippet: string;
-	createdAt: string;
-};
-
-type RpcResult<T> = { json?: T; message?: string };
-
-async function loadMessages(folder: MessageFolder): Promise<Message[]> {
-	const response = await fetch("/api/rpc/messages/list", {
-		method: "POST",
-		credentials: "same-origin",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ json: { folder } }),
-	});
-	const result = (await response.json()) as RpcResult<Message[]>;
-	if (!response.ok || result.json === undefined)
-		throw new Error(result.message ?? "Unable to load messages.");
-	return result.json;
-}
 
 export type MessageFolderPageProps = {
 	folder: MessageFolder;
@@ -33,16 +10,10 @@ export type MessageFolderPageProps = {
 };
 
 export function MessageFolderPage({ folder, title, description }: MessageFolderPageProps) {
-	const [messages, setMessages] = useState<Message[]>();
-	const [error, setError] = useState<string>();
-
-	useEffect(() => {
-		loadMessages(folder)
-			.then(setMessages)
-			.catch((cause: unknown) =>
-				setError(cause instanceof Error ? cause.message : "Unable to load messages."),
-			);
-	}, [folder]);
+	const messages = useQuery({
+		...orpc.messages.list.queryOptions({ input: { folder } }),
+		enabled: typeof window !== "undefined",
+	});
 
 	return (
 		<main className="page-shell">
@@ -56,10 +27,10 @@ export function MessageFolderPage({ folder, title, description }: MessageFolderP
 					Compose
 				</Link>
 			</div>
-			{error && <p role="alert">{error}</p>}
-			{messages?.length ? (
+			{messages.error && <p role="alert">{messages.error.message}</p>}
+			{messages.data?.length ? (
 				<section className="card message-list" aria-label={`${title} messages`}>
-					{messages.map((message) => (
+					{messages.data.map((message) => (
 						<article className="message-row" key={message.id}>
 							<div>
 								<h2>{message.subject}</h2>
@@ -68,16 +39,16 @@ export function MessageFolderPage({ folder, title, description }: MessageFolderP
 								</p>
 								<p>{message.snippet}</p>
 							</div>
-							<time dateTime={message.createdAt}>
-								{new Date(message.createdAt).toLocaleString()}
+							<time dateTime={message.createdAt.toISOString()}>
+								{message.createdAt.toLocaleString()}
 							</time>
 						</article>
 					))}
 				</section>
 			) : (
 				<section className="card empty-state">
-					<h2>No messages</h2>
-					<p>This folder is empty.</p>
+					<h2>{messages.isPending ? "Loading messages…" : "No messages"}</h2>
+					<p>{messages.isPending ? "" : "This folder is empty."}</p>
 				</section>
 			)}
 		</main>
