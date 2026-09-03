@@ -12,6 +12,7 @@ import { isInboundQueueMessage } from "../../worker-utils";
 import { app } from "./src/server/app";
 import { createMailflareAuth } from "./src/server/auth";
 import { getMailflareRole } from "./src/server/policy";
+import { rejectCrossOriginMutation } from "./src/server/request-security";
 import { rpcRouter } from "./src/server/rpc";
 import startHandler from "./dist/server/index.js";
 
@@ -51,6 +52,8 @@ const protectedRoutes: Record<string, true> = {
 };
 
 async function handleRpc(request: Request, env: CloudflareEnv): Promise<Response> {
+	const blocked = rejectCrossOriginMutation(request);
+	if (blocked) return blocked;
 	const result = await rpcHandler.handle(request, {
 		prefix: "/api/rpc",
 		context: { env, request },

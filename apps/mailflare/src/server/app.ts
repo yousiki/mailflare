@@ -6,6 +6,7 @@ import {
 	ensureApplicationUser,
 	SetupAlreadyCompletedError,
 } from "./setup";
+import { rejectCrossOriginMutation } from "./request-security";
 
 export type MailflareBindings = CloudflareEnv;
 
@@ -27,6 +28,8 @@ const setupInput = z.object({
 export const app = new Hono<MailflareContext>()
 	.get("/api/health", (c) => c.json(healthResponse.parse({ service: "mailflare", status: "ok" })))
 	.post("/api/auth/sign-up/email", async (c) => {
+		const blocked = rejectCrossOriginMutation(c.req.raw);
+		if (blocked) return blocked;
 		try {
 			const input = setupInput.parse(await c.req.json());
 			const result = await createMailflareAuth(c.env).api.signUpEmail({
@@ -49,6 +52,8 @@ export const app = new Hono<MailflareContext>()
 		return auth.handler(c.req.raw);
 	})
 	.post("/api/setup/admin", async (c) => {
+		const blocked = rejectCrossOriginMutation(c.req.raw);
+		if (blocked) return blocked;
 		try {
 			const input = setupInput.parse(await c.req.json());
 			const auth = createMailflareAuth(c.env);
