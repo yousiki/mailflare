@@ -1,55 +1,30 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-
-type Domain = { id: string; hostname: string; status: "pending" | "active" | "error" };
-type Mailbox = { id: string; email: string; name: string };
-type RpcResult<T> = { json?: T; message?: string };
+import { orpc } from "~/client/orpc";
 
 export const Route = createFileRoute("/admin/")({ component: AdminPage });
 
-async function postRpc<T>(path: string): Promise<T> {
-	const response = await fetch(`/api/rpc/${path}`, {
-		method: "POST",
-		credentials: "same-origin",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ json: {} }),
-	});
-	const result = (await response.json()) as RpcResult<T>;
-	if (!response.ok || result.json === undefined)
-		throw new Error(result.message ?? "Unable to load administration data.");
-	return result.json;
-}
-
 function AdminPage() {
-	const [counts, setCounts] = useState<{ domains: number; mailboxes: number }>();
-	const [error, setError] = useState<string>();
-
-	useEffect(() => {
-		Promise.all([postRpc<Domain[]>("domains/list"), postRpc<Mailbox[]>("mailboxes/list")])
-			.then(([domains, mailboxes]) =>
-				setCounts({ domains: domains.length, mailboxes: mailboxes.length }),
-			)
-			.catch((cause: unknown) =>
-				setError(cause instanceof Error ? cause.message : "Unable to load administration data."),
-			);
-	}, []);
+	const domains = useQuery(orpc.domains.list.queryOptions({ input: {} }));
+	const mailboxes = useQuery(orpc.mailboxes.list.queryOptions({ input: {} }));
+	const error = domains.error ?? mailboxes.error;
 
 	return (
 		<main className="page-shell">
 			<p className="eyebrow">Administration</p>
 			<h1>Admin</h1>
-			{error && <p role="alert">{error}</p>}
+			{error && <p role="alert">{error.message}</p>}
 			<section className="feature-grid">
 				<article className="card">
 					<h2>Domains</h2>
-					<p>{counts ? `${counts.domains} connected` : "Loading…"}</p>
+					<p>{domains.data ? `${domains.data.length} connected` : "Loading…"}</p>
 					<Link className="button secondary" to="/admin/domains">
 						Manage domains
 					</Link>
 				</article>
 				<article className="card">
 					<h2>Mailboxes</h2>
-					<p>{counts ? `${counts.mailboxes} configured` : "Loading…"}</p>
+					<p>{mailboxes.data ? `${mailboxes.data.length} configured` : "Loading…"}</p>
 					<Link className="button secondary" to="/admin/mailboxes">
 						Manage mailboxes
 					</Link>
@@ -57,6 +32,9 @@ function AdminPage() {
 				<article className="card">
 					<h2>Infrastructure</h2>
 					<p>D1, R2, Queues, Durable Objects, and Workflows are managed by Alchemy.</p>
+					<Link className="button secondary" to="/admin/backups">
+						Database backups
+					</Link>
 				</article>
 			</section>
 		</main>

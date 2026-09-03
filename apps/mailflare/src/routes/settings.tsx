@@ -1,50 +1,26 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-
-type User = { id: string; email: string; name: string };
-type RpcResult<T> = { json?: T; message?: string };
+import { orpc } from "~/client/orpc";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
-async function loadCurrentUser(): Promise<User | null> {
-	const response = await fetch("/api/rpc/auth/me", {
-		method: "POST",
-		credentials: "same-origin",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ json: {} }),
-	});
-	const result = (await response.json()) as RpcResult<{ user: User | null }>;
-	if (!response.ok || result.json === undefined)
-		throw new Error(result.message ?? "Unable to load your profile.");
-	return result.json.user;
-}
-
 function SettingsPage() {
-	const [user, setUser] = useState<User | null>();
-	const [error, setError] = useState<string>();
-
-	useEffect(() => {
-		loadCurrentUser()
-			.then(setUser)
-			.catch((cause: unknown) =>
-				setError(cause instanceof Error ? cause.message : "Unable to load your profile."),
-			);
-	}, []);
+	const profile = useQuery(orpc.auth.me.queryOptions({ input: {} }));
 
 	return (
 		<main className="page-shell narrow">
 			<p className="eyebrow">Account</p>
 			<h1>Settings</h1>
-			{error && <p role="alert">{error}</p>}
+			{profile.error && <p role="alert">{profile.error.message}</p>}
 			<section className="card">
 				<h2>Profile</h2>
-				{user ? (
+				{profile.data?.user ? (
 					<>
-						<p>{user.name}</p>
-						<p>{user.email}</p>
+						<p>{profile.data.user.name}</p>
+						<p>{profile.data.user.email}</p>
 					</>
 				) : (
-					<p>Loading profile…</p>
+					<p>{profile.isPending ? "Loading profile…" : "No profile available."}</p>
 				)}
 			</section>
 			<section className="card">
