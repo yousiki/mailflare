@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && tsc --noEmit",
+    "build": "vite build && vite build --config vite.worker.config.ts && tsc --noEmit",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src",

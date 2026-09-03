@@ -29,7 +29,8 @@ export default Alchemy.Stack(
     });
     const worker = yield* Cloudflare.Worker("MailflareWorker", {
       name: "mailflare",
-      main: "./apps/mailflare/worker.ts",
+      main: "./apps/mailflare/dist/worker/index.js",
+      bundle: false,
       assets: { directory: "./apps/mailflare/dist/client" },
       domain,
       compatibility: {
