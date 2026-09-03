@@ -1,0 +1,11 @@
+$ vitest run
+
+ RUN  v4.1.11 /home/yousiki/Documents/mailflare/apps/mailflare
+
+ ✓ src/server/app.test.ts (1 test) 37ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  16:44:51
+   Duration  270ms (transform 25ms, setup 0ms, import 68ms, tests 37ms, environment 0ms)
+

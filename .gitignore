@@ -53,3 +53,7 @@ next-env.d.ts
 yarn.lock
 wrangler.prod.jsonc
 mailflare-landing
+
+/.alchemy/
+/.turbo/
+/apps/*/dist/

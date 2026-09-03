@@ -22,6 +22,7 @@ const MIGRATION_NAMES = [
 	"0020_add_calendar_templates_schedule.sql",
 	"0021_add_mailbox_signature.sql",
 	"0022_add_mailbox_auto_reply.sql",
+	"0023_add_better_auth.sql",
 ];
 
 const INITIAL_SCHEMA_SQL = `
@@ -74,7 +75,11 @@ CREATE INDEX IF NOT EXISTS backups_status_idx ON backups(status);
 CREATE TABLE IF NOT EXISTS app_settings (id text PRIMARY KEY NOT NULL, app_name text DEFAULT 'Mailflare' NOT NULL, icon_key text, updated_at integer NOT NULL);
 INSERT OR IGNORE INTO app_settings (id, app_name, updated_at) VALUES ('default', 'Mailflare', unixepoch());
 CREATE TABLE IF NOT EXISTS license_settings (id text PRIMARY KEY NOT NULL, instance_id text NOT NULL, instance_url text, license_key_hash text, plan text DEFAULT 'community' NOT NULL, state text DEFAULT 'inactive' NOT NULL, features text DEFAULT '[]' NOT NULL, activated_at integer, validated_at integer, updated_at integer NOT NULL);
-CREATE UNIQUE INDEX IF NOT EXISTS license_settings_instance_id_unique ON license_settings(instance_id);
+CREATE TABLE IF NOT EXISTS user (id text PRIMARY KEY NOT NULL, name text NOT NULL, email text NOT NULL, email_verified integer DEFAULT false NOT NULL, image text, created_at integer NOT NULL, updated_at integer NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS user_email_idx ON user(email);
+CREATE TABLE IF NOT EXISTS session (id text PRIMARY KEY NOT NULL, expires_at integer NOT NULL, token text NOT NULL UNIQUE, created_at integer NOT NULL, updated_at integer NOT NULL, ip_address text, user_agent text, user_id text NOT NULL REFERENCES user(id) ON DELETE cascade);
+CREATE TABLE IF NOT EXISTS account (id text PRIMARY KEY NOT NULL, account_id text NOT NULL, provider_id text NOT NULL, user_id text NOT NULL REFERENCES user(id) ON DELETE cascade, access_token text, refresh_token text, id_token text, access_token_expires_at integer, refresh_token_expires_at integer, scope text, password text, created_at integer NOT NULL, updated_at integer NOT NULL);
+CREATE TABLE IF NOT EXISTS verification (id text PRIMARY KEY NOT NULL, identifier text NOT NULL, value text NOT NULL, expires_at integer NOT NULL, created_at integer NOT NULL, updated_at integer NOT NULL);
 CREATE TABLE IF NOT EXISTS d1_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL);
 `;
 

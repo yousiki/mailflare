@@ -1,0 +1,5 @@
+[install]
+lockfile = "bun"
+
+[install.cache]
+dir = "node_modules/.bun-cache"

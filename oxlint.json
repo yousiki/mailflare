@@ -1,0 +1,8 @@
+{
+  "$schema": "https://oxc.rs/oxlint/config.json",
+  "plugins": ["typescript", "react", "import"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off"
+  }
+}

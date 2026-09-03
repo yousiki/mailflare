@@ -1,0 +1,7 @@
+{
+  "$schema": "https://oxc.rs/oxfmt/configuration/schema.json",
+  "printWidth": 100,
+  "useTabs": true,
+  "semi": true,
+  "singleQuote": false
+}

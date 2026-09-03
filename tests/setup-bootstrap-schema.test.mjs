@@ -31,6 +31,15 @@ test("bootstrap records migrations 0013, 0021, and 0022 so later deploys do not 
 	}
 });
 
+test("fresh bootstrap records and creates the Better Auth schema", () => {
+	const names = migrationNames();
+	assert.ok(names.includes("0023_add_better_auth.sql"));
+	const sql = initialSchemaSql();
+	for (const table of ["user", "session", "account", "verification"]) {
+		assert.match(sql, new RegExp(`CREATE TABLE IF NOT EXISTS ${table} \\(`));
+	}
+});
+
 test("fresh bootstrap schema accepts the current Drizzle mailbox and license inserts", () => {
 	const sql = initialSchemaSql();
 	const mailboxCreate = sql.match(/CREATE TABLE IF NOT EXISTS mailboxes \(([\s\S]*?)\);/);

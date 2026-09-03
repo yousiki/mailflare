@@ -109,114 +109,79 @@ curl -X POST http://localhost:3000/api/seed
 
 ## Deploy
 
-Mailflare is deployed as a Cloudflare Worker. This repository does not use Cloudflare
-Workers Builds or a Cloudflare Pages project. GitHub Actions builds OpenNext and deploys
-the Worker with Wrangler.
+Mailflare is a TanStack Start application running in a Cloudflare Worker. Vite builds the
+SSR Worker and browser assets; Hono and oRPC provide the typed application gateway. Cloudflare
+resources are declared in `infra/alchemy.run.ts`, not in a production-generated Wrangler file.
 
 ### GitHub Actions deployment
 
-The workflow in `.github/workflows/deploy.yml` runs on pushes to `main` and can also be
-started manually. It performs these steps in order:
+`.github/workflows/deploy.yml` runs verification before deployment:
 
-1. Installs the locked npm dependencies.
-2. Builds the OpenNext Worker.
-3. Applies pending remote D1 migrations.
-4. Deploys `mailflare` and attaches the configured custom domain.
+1. Installs the frozen Bun workspace lockfile.
+2. Runs the modern app typecheck, oxlint, formatter check, and Vitest suite.
+3. Builds the TanStack Start Worker with the Cloudflare Vite plugin.
+4. Optionally purges only exact existing Mailflare resource names when the manually-triggered
+   `purge_existing` input is enabled.
+5. Plans and deploys `infra/alchemy.run.ts` to the `production` stage.
+6. Checks `/`, `/login`, `/register`, `/setup`, `/inbox`, `/settings`, and `/admin` on the
+   configured public domain and requires a `Mailflare` page marker.
 
-The hostname is intentionally not stored in `wrangler.jsonc`. Set it as the GitHub Actions
-variable `MAILFLARE_DOMAIN`, for example `mail.siki.moe`. The workflow passes it to Wrangler
-with `--domain` during deployment. This keeps the public repository independent of one
-installation's hostname while still configuring the Custom Domain declaratively in CI.
-
-The existing `siki.moe` and `zotero-mcp.siki.moe` Workers are not changed. Use a free
-hostname such as `mail.siki.moe` unless you intentionally want Mailflare to replace the
-Worker currently serving the apex `siki.moe`.
+The production hostname is never committed. Set the GitHub Actions `production` Environment
+variable `MAILFLARE_DOMAIN` to the desired hostname. The Alchemy stack uses that value for the
+Worker custom domain and does not declare or modify any other Worker in the account.
 
 ### GitHub Actions configuration
 
-Create a GitHub Actions environment named `production`, restrict it to the deployment
-branch, and configure the workflow to use that environment. The workflow expects these
-environment variables:
+Configure the `production` Environment with:
 
-- `MAILFLARE_DOMAIN` — public Custom Domain, such as `mail.siki.moe`.
-- `CF_EMAIL_WORKER_NAME` — optional variable; defaults to `mailflare` and must match the
-deployed Worker script name.
-- `GITHUB_UPDATE_REF` — optional base branch for the upstream update pull request; the
-  repository default branch is used when omitted.
-- `GITHUB_UPDATE_REPO` — optional installation repository in `owner/repository` format.
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — optional public Turnstile site key.
+- Variable `MAILFLARE_DOMAIN` — the public custom domain.
+- Optional variable `CF_EMAIL_WORKER_NAME` — must remain `mailflare`.
+- Optional variable `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 
-Configure these GitHub Actions secrets:
+Configure these secrets:
 
-- `CLOUDFLARE_ACCOUNT_ID` — the YouSiki account ID.
-- `CLOUDFLARE_API_TOKEN` — CI token allowed to deploy Workers and manage the declared
-Worker resources.
-- `D1_DATABASE_ID` — the account-specific ID of the `mailflare` D1 database.
-- `CF_TOKEN` — separate runtime token used by Mailflare's domain and Email Routing API
-calls. It needs the permissions described in the setup section.
-- `CF_AID` — account ID used by the backup workflow.
-- `D1_BACKUP_TOKEN` — optional token allowed to export the D1 database.
-- `TURNSTILE_SECRET_KEY` — optional Turnstile server secret.
-- `GITHUB_UPDATE_TOKEN` — optional fine-grained GitHub token with Actions write permission for
-  the dashboard update button.
-- `CF_EMAIL` and `CF_API_KEY` — optional legacy Global API Key credentials; use these only
-instead of `CF_TOKEN`.
+- `CLOUDFLARE_ACCOUNT_ID` — target Cloudflare account ID.
+- `CLOUDFLARE_API_TOKEN` — Alchemy deployment token.
+- `CF_TOKEN` — runtime Cloudflare API token used by Mailflare domain and email operations.
+- `CF_AID` — account ID used by database backup operations.
+- Any existing runtime secrets required by the installed features, such as
+  `D1_BACKUP_TOKEN`, `TURNSTILE_SECRET_KEY`, `GITHUB_UPDATE_TOKEN`, `CF_EMAIL`, and `CF_API_KEY`.
 
-The deployment workflow creates temporary production Wrangler and secret files on the
-GitHub runner. They are deleted after deployment. Do not commit either file or any of the
-secret values.
+Secrets are supplied to CI and runtime bindings without printing their values or committing them.
 
-### First deployment
+### Fresh installation and resource ownership
 
-The account currently has no Mailflare resources. The first deployment must provision or
-create the following resources:
+The Alchemy stack owns only these explicitly named resources:
 
 - Worker: `mailflare`
 - D1 database: `mailflare`
 - R2 bucket: `mailflare-raw`
 - Queues: `mailflare-inbound` and `mailflare-outbound`
-- Durable Object: `RealtimeHub`
-- Workflow: `mailflare-database-backup`
+- Durable Object and Workflow bindings declared by the Worker
 
-If `D1_DATABASE_ID` is already configured, the workflow uses it. Otherwise, it looks up the
-`mailflare` database and creates it with Wrangler when necessary. The resolved ID is injected
-into temporary files on the GitHub runner and is not committed to this repository.
+The workflow does not purge these resources on ordinary pushes. To perform the issue #2 fresh
+installation, manually dispatch the workflow with `purge_existing` enabled after reviewing the
+exact resource names in the Cloudflare account. The purge step never uses a prefix or wildcard and
+does not target unrelated Workers, domains, DNS records, mailboxes, or account resources.
 
-After deployment, visit `/setup`, create the first administrator, and add the domains that
-Mailflare should manage. `CF_EMAIL_WORKER_NAME` must remain `mailflare`; it is the Worker
-script name used by Email Routing, not the HTTP hostname.
-
-### Runtime application configuration
-
-`CF_TOKEN` is not the same as `CLOUDFLARE_API_TOKEN`. The former is available to the
-deployed application and is used when users add or remove domains. The latter exists only
-on the GitHub runner and is used to build, migrate, and deploy the Worker.
-
-The `REALTIME` Durable Object binding and its migration are declared in `wrangler.jsonc`.
-The `DATABASE_BACKUP_WORKFLOW` binding is also declared there. Deploy the complete Worker
-through this workflow so those bindings are provisioned; a source-only or Pages deployment
-does not provide them.
-
-### Dashboard updates
-
-The admin overview can dispatch `.github/workflows/deploy-update.yml`. The workflow imports
-the selected upstream branch into a new update branch and opens a pull request against the
-configured base branch. It does not push directly to the deployment branch or modify the
-production database. Review and merge the pull request; the merge into `main` then triggers
-`.github/workflows/deploy.yml`, which applies D1 migrations and deploys the updated Worker.
+The fresh D1 schema includes Better Auth's `user`, `session`, `account`, and `verification` tables.
+Existing Mailflare users, passwords, sessions, and business data are intentionally not migrated.
+Complete `/setup` after the first successful deployment to create a new administrator.
 
 ### Manual local deployment
 
-For an already bootstrapped account, authenticate Wrangler locally and run:
+Build the application and run the same Alchemy stack locally with credentials supplied through the
+environment or an untracked `.env` file:
 
 ```bash
-npx opennextjs-cloudflare build
-npx wrangler d1 migrations apply DB --remote
-OPEN_NEXT_DEPLOY=true npx wrangler deploy --domain mail.siki.moe
+bun install --frozen-lockfile
+bun run --cwd apps/mailflare build
+bunx alchemy plan infra/alchemy.run.ts --stage staging
+bunx alchemy deploy infra/alchemy.run.ts --stage staging
 ```
 
-Prefer GitHub Actions for production deployment so the hostname, deployment token, runtime
-secrets, and account-specific D1 ID remain outside tracked files.
+Use GitHub Actions for production so the hostname, account ID, deployment token, and runtime
+secrets remain in the protected `production` Environment.
 
 ## Troubleshooting
 
