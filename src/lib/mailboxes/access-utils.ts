@@ -1,17 +1,14 @@
-import { eq } from "drizzle-orm";
 import type { AppDatabase } from "@/db";
-import { licenseSettings } from "@/db/schema";
 
-export async function isTeamMailboxSharingEnabled(db: AppDatabase): Promise<boolean> {
-	try {
-		const [license] = await db
-			.select({ plan: licenseSettings.plan, state: licenseSettings.state })
-			.from(licenseSettings)
-			.where(eq(licenseSettings.id, "default"))
-			.limit(1);
-
-		return license?.plan === "team" && license.state === "active";
-	} catch {
-		return false;
-	}
+/**
+ * Shared mailbox delegation is part of the self-hosted feature set. Keep the
+ * database argument for compatibility with existing access callers, but do not
+ * gate access on the optional commercial license settings row.
+ */
+export async function isTeamMailboxSharingEnabled(_db: AppDatabase): Promise<boolean> {
+ try {
+  return true;
+ } catch {
+  return false;
+ }
 }
