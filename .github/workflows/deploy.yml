@@ -166,8 +166,6 @@ jobs:
           bunx wrangler queues delete mailflare-outbound --config="$cleanup_config_path" || true
 
 
-      - name: Bootstrap Alchemy Cloudflare state store
-        run: bunx alchemy cloudflare bootstrap
 
       - name: Deploy Alchemy infrastructure
         run: bunx alchemy deploy infra/alchemy.run.ts --stage production --yes --adopt

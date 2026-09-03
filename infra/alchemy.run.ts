@@ -4,15 +4,18 @@ import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 
 const domain = process.env.MAILFLARE_DOMAIN;
+const authSecret = process.env.BETTER_AUTH_SECRET ?? process.env.CF_TOKEN;
 if (!domain && process.env.ALCHEMY_STAGE === "production") {
   throw new Error("MAILFLARE_DOMAIN is required for the production stage");
+}
+if (!authSecret) {
+  throw new Error("CF_TOKEN or BETTER_AUTH_SECRET is required for the production stage");
 }
 
 export default Alchemy.Stack(
   "Mailflare",
-  { providers: Cloudflare.providers(), state: Cloudflare.state() },
-  Effect.gen(function* () {
-    const authSecret = yield* Alchemy.makeRandom("BetterAuthSecret", { bytes: 32 });
+  { providers: Cloudflare.providers(), state: Alchemy.localState() },
+  Effect.gen(function*() {
     const database = yield* Cloudflare.D1.Database("MailflareDatabase", {
       name: "mailflare",
       migrations: "drizzle/alchemy-migrations",
@@ -53,7 +56,7 @@ export default Alchemy.Stack(
           simple: { limit: 20, period: 60 },
         }),
         CF_EMAIL_WORKER_NAME: "mailflare",
-        BETTER_AUTH_SECRET: authSecret,
+        BETTER_AUTH_SECRET: Redacted.make(authSecret),
         BETTER_AUTH_URL: domain ? `https://${domain}` : "http://localhost:3000",
         CF_TOKEN: Redacted.make(process.env.CF_TOKEN ?? ""),
         CF_AID: Redacted.make(process.env.CF_AID ?? ""),
