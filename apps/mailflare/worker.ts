@@ -35,8 +35,11 @@ const protectedRoutes: Record<string, true> = {
 	"/compose": true,
 };
 
-async function handleRpc(request: Request): Promise<Response> {
-	const result = await rpcHandler.handle(request, { prefix: "/api/rpc" });
+async function handleRpc(request: Request, env: CloudflareEnv): Promise<Response> {
+	const result = await rpcHandler.handle(request, {
+		prefix: "/api/rpc",
+		context: { env, request },
+	});
 	if (result.matched) return result.response;
 	return new Response("Not Found", { status: 404 });
 }
@@ -56,7 +59,7 @@ export default {
 		) {
 			return app.fetch(request, env);
 		}
-		if (pathname.startsWith("/api/rpc")) return handleRpc(request);
+		if (pathname.startsWith("/api/rpc")) return handleRpc(request, env);
 		if (modernRoutes[pathname]) {
 			if (protectedRoutes[pathname] && !(await hasSession(request, env))) {
 				return Response.redirect(new URL("/login", request.url), 302);

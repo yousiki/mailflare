@@ -1,6 +1,6 @@
 import { RPCHandler } from "@orpc/server/fetch";
 import { describe, expect, it } from "vitest";
-import { rpcRouter } from "./rpc";
+import { rpcRouter, type MailflareRpcContext } from "./rpc";
 
 const handler = new RPCHandler(rpcRouter);
 
@@ -11,7 +11,10 @@ describe("oRPC gateway", () => {
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({ json: {} }),
 		});
-		const result = await handler.handle(request, { prefix: "/api/rpc" });
+		const result = await handler.handle(request, {
+			prefix: "/api/rpc",
+			context: { env: {} as CloudflareEnv, request } satisfies MailflareRpcContext,
+		});
 		expect(result.matched).toBe(true);
 		if (result.matched) {
 			expect(result.response.status).toBe(200);
