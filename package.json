@@ -18,57 +18,13 @@
     "deploy:local": "bun run deploy",
     "deploy:worker": "bun run deploy",
     "upload": "bun run --cwd apps/mailflare build",
-    "preview": "bun run --cwd apps/mailflare preview",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
-    "migrate": "wrangler d1 migrations apply DB",
-    "db:seed": "curl -X POST http://localhost:3000/api/seed"
-  },
-  "cloudflare": {
-    "bindings": {
-      "CF_TOKEN": {
-        "description": "Runtime Cloudflare API token used by Mailflare onboarding to call the Zones and Email Routing APIs. Cloudflare's deploy/build token is not passed to the app, so create this separately at https://dash.cloudflare.com/profile/api-tokens with `Zone Read`, `Email Routing Edit`, `Email Sending Edit`, and `Email Routing Rules Write` permissions for the zones you will connect. Paste only the token secret value, without `Bearer`."
-      },
-      "CF_AID": {
-        "description": "Cloudflare account ID. Required for automatic database backups."
-      },
-      "D1_DATABASE_ID": {
-        "description": "Cloudflare D1 database ID for the mailflare database. Required for automatic database backups."
-      },
-      "D1_BACKUP_TOKEN": {
-        "description": "Optional Cloudflare API token allowed to export the target D1 database. Store this as a secret. If omitted, backups reuse CF_TOKEN."
-      },
-      "TURNSTILE_SECRET_KEY": {
-        "description": "Cloudflare Turnstile secret key used to verify login and first-run registration challenges. Pair with NEXT_PUBLIC_TURNSTILE_SITE_KEY at build time."
-      },
-      "NEXT_PUBLIC_TURNSTILE_SITE_KEY": {
-        "description": "Cloudflare Turnstile public site key used by the login and first-run registration widgets."
-      },
-      "GITHUB_UPDATE_TOKEN": {
-        "description": "Fine-grained GitHub token for the installation repository with Actions: write permission, Contents: write read permission. Used only by the admin update endpoint to dispatch update.yml."
-      },
-      "GITHUB_UPDATE_REF": {
-        "description": "Optional branch used to dispatch updates. Leave blank to use the repository default branch."
-      },
-      "GITHUB_UPDATE_REPO": {
-        "description": "Your github repository that connect to cloudflare worker"
-      },
-      "CF_EMAIL": {
-        "description": "Legacy Global API Key auth only. Use this with `CF_API_KEY` instead of `CF_TOKEN`."
-      },
-      "CF_API_KEY": {
-        "description": "Legacy Global API Key auth only. Prefer `CF_TOKEN` for new deployments."
-      }
-    }
+    "preview": "bun run --cwd apps/mailflare preview"
   },
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
     "@effect/platform": "^0.97.1",
     "@effect/platform-bun": "4.0.0-rc.112",
     "@effect/platform-node": "4.0.0-rc.112",
-    "@opennextjs/cloudflare": "^1.19.9",
     "@orpc/client": "^1.15.0",
     "@orpc/server": "^1.15.0",
     "@orpc/tanstack-query": "^1.15.0",
@@ -95,7 +51,6 @@
     "lucide-react": "^1.16.0",
     "mimetext": "^3.0.28",
     "nanoid": "^5.1.11",
-    "next": "16.2.6",
     "postal-mime": "^2.7.4",
     "react": "^19.1.7",
     "react-dom": "^19.1.7",
@@ -106,7 +61,6 @@
     "@cloudflare/vite-plugin": "^1.54.3",
     "@cloudflare/workers-types": "^4.20260520.1",
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/router-plugin": "^1.168.35",
     "@types/bcryptjs": "^2.4.6",
@@ -117,7 +71,6 @@
     "alchemy": "^2.0.0-beta.76",
     "drizzle-kit": "1.0.0-rc.5-ab785fc",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
     "lefthook": "^2.1.12",
     "oxfmt": "^0.66.0",
     "oxlint": "^1.81.0",
