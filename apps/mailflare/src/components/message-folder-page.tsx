@@ -31,7 +31,12 @@ export function MessageFolderPage({ folder, title, description }: MessageFolderP
 			{messages.data?.length ? (
 				<section className="card message-list" aria-label={`${title} messages`}>
 					{messages.data.map((message) => (
-						<article className="message-row" key={message.id}>
+						<Link
+							className="message-row"
+							to="/inbox/$messageId"
+							params={{ messageId: message.id }}
+							key={message.id}
+						>
 							<div>
 								<h2>{message.subject}</h2>
 								<p>
@@ -42,7 +47,7 @@ export function MessageFolderPage({ folder, title, description }: MessageFolderP
 							<time dateTime={message.createdAt.toISOString()}>
 								{message.createdAt.toLocaleString()}
 							</time>
-						</article>
+						</Link>
 					))}
 				</section>
 			) : (
