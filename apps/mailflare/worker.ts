@@ -7,6 +7,10 @@ import {
 } from "../../src/lib/email/inbound";
 import { processOutboundQueue, type OutboundQueueMessage } from "../../src/lib/email/send";
 import { getDb } from "../../src/db";
+import {
+	getAccountForwardingDestination,
+	MAILFLARE_FORWARDED_HEADER,
+} from "../../src/lib/email/account-forwarding";
 import { resolveInboundAddress } from "../../src/lib/email/routing";
 import { isInboundQueueMessage } from "../../worker-utils";
 import { app } from "./src/server/app";
@@ -113,6 +117,18 @@ export default {
 		if (!decision?.mailbox || decision.action !== "store") {
 			message.setReject("Unknown recipient");
 			return;
+		}
+		if (message.headers.get(MAILFLARE_FORWARDED_HEADER) !== "1") {
+			const forwardingDestination = await getAccountForwardingDestination(env, message.to);
+			if (forwardingDestination) {
+				const headers = new Headers();
+				headers.set(MAILFLARE_FORWARDED_HEADER, "1");
+				try {
+					await message.forward(forwardingDestination, headers);
+				} catch (error) {
+					console.error(`Account forwarding failed for ${message.to}`, error);
+				}
+			}
 		}
 
 		const rawR2Key = await storeRawToR2(env, message.from, message.to, message.raw);
