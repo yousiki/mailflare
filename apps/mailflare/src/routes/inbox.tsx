@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { mailflareClient } from "~/client/orpc";
 
 type MailboxSummary = { id: string; email: string; name: string };
 type MessageSummary = {
@@ -11,24 +12,10 @@ type MessageSummary = {
 	direction: "inbound" | "outbound";
 	read: boolean;
 	starred: boolean;
-	createdAt: string;
+	createdAt: Date;
 };
-type RpcResult<T> = { json?: T; message?: string };
 
 export const Route = createFileRoute("/inbox")({ component: InboxPage });
-
-async function postRpc<T>(path: string, data: unknown): Promise<T> {
-	const response = await fetch(`/api/rpc/${path}`, {
-		method: "POST",
-		credentials: "same-origin",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ json: data }),
-	});
-	const result = (await response.json()) as RpcResult<T>;
-	if (!response.ok || result.json === undefined)
-		throw new Error(result.message ?? "Unable to load inbox.");
-	return result.json;
-}
 
 function InboxPage() {
 	const [mailboxes, setMailboxes] = useState<MailboxSummary[]>();
@@ -36,14 +23,12 @@ function InboxPage() {
 	const [error, setError] = useState<string>();
 
 	useEffect(() => {
-		postRpc<MailboxSummary[]>("mailboxes/list", {})
+		mailflareClient.mailboxes
+			.list({})
 			.then(async (items) => {
 				setMailboxes(items);
 				setMessages(
-					await postRpc<MessageSummary[]>("messages/list", {
-						mailboxId: items[0]?.id,
-						folder: "inbox",
-					}),
+					await mailflareClient.messages.list({ mailboxId: items[0]?.id, folder: "inbox" }),
 				);
 			})
 			.catch((cause: unknown) =>
@@ -74,8 +59,8 @@ function InboxPage() {
 								</p>
 								<p>{message.snippet}</p>
 							</div>
-							<time dateTime={message.createdAt}>
-								{new Date(message.createdAt).toLocaleString()}
+							<time dateTime={message.createdAt.toISOString()}>
+								{message.createdAt.toLocaleString()}
 							</time>
 						</article>
 					))}
