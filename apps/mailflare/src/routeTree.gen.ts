@@ -28,9 +28,14 @@ import { Route as SpamRouteImport } from './routes/spam'
 import { Route as StarredRouteImport } from './routes/starred'
 import { Route as TrashRouteImport } from './routes/trash'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAccountsRouteImport } from './routes/admin/accounts'
+import { Route as AdminActivityRouteImport } from './routes/admin/activity'
+import { Route as AdminApiKeysRouteImport } from './routes/admin/api-keys'
 import { Route as AdminBackupsRouteImport } from './routes/admin/backups'
 import { Route as AdminDomainsRouteImport } from './routes/admin/domains'
 import { Route as AdminMailboxesRouteImport } from './routes/admin/mailboxes'
+import { Route as AdminRoutingRouteImport } from './routes/admin/routing'
+import { Route as AdminWebhooksRouteImport } from './routes/admin/webhooks'
 import { Route as InboxIndexRouteImport } from './routes/inbox/index'
 import { Route as InboxMessageIdRouteImport } from './routes/inbox/$messageId'
 
@@ -129,6 +134,21 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAccountsRoute = AdminAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminActivityRoute = AdminActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminApiKeysRoute = AdminApiKeysRouteImport.update({
+  id: '/api-keys',
+  path: '/api-keys',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBackupsRoute = AdminBackupsRouteImport.update({
   id: '/backups',
   path: '/backups',
@@ -142,6 +162,16 @@ const AdminDomainsRoute = AdminDomainsRouteImport.update({
 const AdminMailboxesRoute = AdminMailboxesRouteImport.update({
   id: '/mailboxes',
   path: '/mailboxes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRoutingRoute = AdminRoutingRouteImport.update({
+  id: '/routing',
+  path: '/routing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminWebhooksRoute = AdminWebhooksRouteImport.update({
+  id: '/webhooks',
+  path: '/webhooks',
   getParentRoute: () => AdminRoute,
 } as any)
 const InboxIndexRoute = InboxIndexRouteImport.update({
@@ -174,9 +204,14 @@ export interface FileRoutesByFullPath {
   '/spam': typeof SpamRoute
   '/starred': typeof StarredRoute
   '/trash': typeof TrashRoute
+  '/admin/accounts': typeof AdminAccountsRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/api-keys': typeof AdminApiKeysRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/admin/routing': typeof AdminRoutingRoute
+  '/admin/webhooks': typeof AdminWebhooksRoute
   '/inbox/$messageId': typeof InboxMessageIdRoute
   '/admin/': typeof AdminIndexRoute
   '/inbox/': typeof InboxIndexRoute
@@ -198,9 +233,14 @@ export interface FileRoutesByTo {
   '/spam': typeof SpamRoute
   '/starred': typeof StarredRoute
   '/trash': typeof TrashRoute
+  '/admin/accounts': typeof AdminAccountsRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/api-keys': typeof AdminApiKeysRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/admin/routing': typeof AdminRoutingRoute
+  '/admin/webhooks': typeof AdminWebhooksRoute
   '/inbox/$messageId': typeof InboxMessageIdRoute
   '/admin': typeof AdminIndexRoute
   '/inbox': typeof InboxIndexRoute
@@ -225,9 +265,14 @@ export interface FileRoutesById {
   '/spam': typeof SpamRoute
   '/starred': typeof StarredRoute
   '/trash': typeof TrashRoute
+  '/admin/accounts': typeof AdminAccountsRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/api-keys': typeof AdminApiKeysRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/admin/routing': typeof AdminRoutingRoute
+  '/admin/webhooks': typeof AdminWebhooksRoute
   '/inbox/$messageId': typeof InboxMessageIdRoute
   '/admin/': typeof AdminIndexRoute
   '/inbox/': typeof InboxIndexRoute
@@ -253,9 +298,14 @@ export interface FileRouteTypes {
     | '/spam'
     | '/starred'
     | '/trash'
+    | '/admin/accounts'
+    | '/admin/activity'
+    | '/admin/api-keys'
     | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/admin/routing'
+    | '/admin/webhooks'
     | '/inbox/$messageId'
     | '/admin/'
     | '/inbox/'
@@ -277,9 +327,14 @@ export interface FileRouteTypes {
     | '/spam'
     | '/starred'
     | '/trash'
+    | '/admin/accounts'
+    | '/admin/activity'
+    | '/admin/api-keys'
     | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/admin/routing'
+    | '/admin/webhooks'
     | '/inbox/$messageId'
     | '/admin'
     | '/inbox'
@@ -303,9 +358,14 @@ export interface FileRouteTypes {
     | '/spam'
     | '/starred'
     | '/trash'
+    | '/admin/accounts'
+    | '/admin/activity'
+    | '/admin/api-keys'
     | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/admin/routing'
+    | '/admin/webhooks'
     | '/inbox/$messageId'
     | '/admin/'
     | '/inbox/'
@@ -467,6 +527,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/accounts': {
+      id: '/admin/accounts'
+      path: '/accounts'
+      fullPath: '/admin/accounts'
+      preLoaderRoute: typeof AdminAccountsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/activity': {
+      id: '/admin/activity'
+      path: '/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AdminActivityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/api-keys': {
+      id: '/admin/api-keys'
+      path: '/api-keys'
+      fullPath: '/admin/api-keys'
+      preLoaderRoute: typeof AdminApiKeysRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/backups': {
       id: '/admin/backups'
       path: '/backups'
@@ -488,6 +569,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMailboxesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/routing': {
+      id: '/admin/routing'
+      path: '/routing'
+      fullPath: '/admin/routing'
+      preLoaderRoute: typeof AdminRoutingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/webhooks': {
+      id: '/admin/webhooks'
+      path: '/webhooks'
+      fullPath: '/admin/webhooks'
+      preLoaderRoute: typeof AdminWebhooksRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/inbox/': {
       id: '/inbox/'
       path: '/'
@@ -506,16 +601,26 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAccountsRoute: typeof AdminAccountsRoute
+  AdminActivityRoute: typeof AdminActivityRoute
+  AdminApiKeysRoute: typeof AdminApiKeysRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
   AdminDomainsRoute: typeof AdminDomainsRoute
   AdminMailboxesRoute: typeof AdminMailboxesRoute
+  AdminRoutingRoute: typeof AdminRoutingRoute
+  AdminWebhooksRoute: typeof AdminWebhooksRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAccountsRoute: AdminAccountsRoute,
+  AdminActivityRoute: AdminActivityRoute,
+  AdminApiKeysRoute: AdminApiKeysRoute,
   AdminBackupsRoute: AdminBackupsRoute,
   AdminDomainsRoute: AdminDomainsRoute,
   AdminMailboxesRoute: AdminMailboxesRoute,
+  AdminRoutingRoute: AdminRoutingRoute,
+  AdminWebhooksRoute: AdminWebhooksRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

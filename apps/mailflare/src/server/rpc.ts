@@ -15,6 +15,15 @@ import {
 	updateMessageStatus,
 } from "./message-actions";
 import { listMessagesForUser, type MessageFolder } from "./messages";
+import {
+	createApiKey,
+	createWebhook,
+	listAdminUsers,
+	listApiKeys,
+	listAuditActivity,
+	listRoutingRules,
+	listWebhooks,
+} from "./admin";
 import { requireAdmin } from "./policy";
 
 export type MailflareRpcContext = { env: CloudflareEnv; request: Request };
@@ -267,6 +276,119 @@ const calendarListProcedure = withSession
 		listCalendarEventsForUser(context.env, context.session.user.id, input.start, input.end),
 	);
 
+const adminUsersProcedure = withAdmin
+	.route({ method: "POST", path: "/admin/users" })
+	.input(emptyInput)
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				email: z.email(),
+				name: z.string(),
+				role: z.enum(["admin", "user"]),
+				disabled: z.boolean(),
+			}),
+		),
+	)
+	.handler(({ context }) => listAdminUsers(context.env));
+
+const activityListProcedure = withAdmin
+	.route({ method: "POST", path: "/admin/activity" })
+	.input(emptyInput)
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				action: z.string(),
+				metadata: z.string().nullable(),
+				createdAt: z.date(),
+				actorEmail: z.email().nullable(),
+			}),
+		),
+	)
+	.handler(({ context }) => listAuditActivity(context.env));
+
+const apiKeysListProcedure = withSession
+	.route({ method: "POST", path: "/api-keys/list" })
+	.input(emptyInput)
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				name: z.string(),
+				prefix: z.string(),
+				scopes: z.string(),
+				createdAt: z.date(),
+				lastUsedAt: z.date().nullable(),
+			}),
+		),
+	)
+	.handler(({ context }) => listApiKeys(context.env, context.session.user.id));
+
+const apiKeyCreateProcedure = withSession
+	.route({ method: "POST", path: "/api-keys/create" })
+	.input(
+		z.object({
+			name: z.string().trim().min(1).max(120),
+			scopes: z.array(z.enum(["send", "read"])).min(1),
+		}),
+	)
+	.output(z.object({ id: z.string(), name: z.string(), prefix: z.string(), key: z.string() }))
+	.handler(({ context, input }) =>
+		createApiKey(context.env, context.session.user.id, input.name, input.scopes),
+	);
+
+const webhooksListProcedure = withAdmin
+	.route({ method: "POST", path: "/admin/webhooks" })
+	.input(emptyInput)
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				url: z.url(),
+				events: z.string(),
+				enabled: z.boolean(),
+				createdAt: z.date(),
+			}),
+		),
+	)
+	.handler(({ context }) => listWebhooks(context.env, context.session.user.id));
+
+const webhookCreateProcedure = withAdmin
+	.route({ method: "POST", path: "/admin/webhooks/create" })
+	.input(z.object({ url: z.url(), events: z.array(z.string().min(1)).min(1) }))
+	.output(
+		z.object({ id: z.string(), url: z.url(), secret: z.string(), events: z.array(z.string()) }),
+	)
+	.handler(({ context, input }) =>
+		createWebhook(context.env, context.session.user.id, input.url, input.events),
+	);
+
+const routingRulesListProcedure = withSession
+	.route({ method: "POST", path: "/routing-rules/list" })
+	.input(z.object({ mailboxId: z.string().min(1) }))
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				domainId: z.string(),
+				mailboxId: z.string().nullable(),
+				pattern: z.string(),
+				matchField: z.string(),
+				matchOperator: z.string(),
+				matchValue: z.string(),
+				folderId: z.string().nullable(),
+				action: z.string(),
+				forwardTo: z.string().nullable(),
+				priority: z.number(),
+				createdAt: z.date(),
+			}),
+		),
+	)
+	.handler(({ context, input }) =>
+		listRoutingRules(context.env, context.session.user.id, input.mailboxId),
+	);
+
 const backupsListProcedure = withAdmin
 	.route({ method: "POST", path: "/backups/list" })
 	.input(emptyInput)
@@ -311,6 +433,13 @@ export const rpcRouter = rpc.router({
 	calendar: { list: calendarListProcedure },
 	backups: { list: backupsListProcedure, start: backupStartProcedure },
 	folders: { list: foldersListProcedure },
+	admin: {
+		users: adminUsersProcedure,
+		activity: activityListProcedure,
+		webhooks: { list: webhooksListProcedure, create: webhookCreateProcedure },
+	},
+	apiKeys: { list: apiKeysListProcedure, create: apiKeyCreateProcedure },
+	routingRules: { list: routingRulesListProcedure },
 });
 
 export type MailflareRpcRouter = typeof rpcRouter;

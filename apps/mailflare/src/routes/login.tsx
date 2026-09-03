@@ -6,8 +6,7 @@ export const Route = createFileRoute("/login")({ component: LoginPage });
 function LoginPage() {
 	const [error, setError] = useState<string>();
 	const [pending, setPending] = useState(false);
-
-	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+	async function submit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		setError(undefined);
 		setPending(true);
@@ -28,12 +27,11 @@ function LoginPage() {
 			setPending(false);
 		}
 	}
-
 	return (
 		<main className="page-shell narrow">
 			<h1>Sign in to Mailflare</h1>
 			<p>Use your Mailflare account to access your inbox.</p>
-			<form className="card" onSubmit={handleSubmit}>
+			<form className="card" onSubmit={submit}>
 				<label>
 					Email
 					<input name="email" type="email" autoComplete="username" required />

@@ -6,8 +6,7 @@ export const Route = createFileRoute("/register")({ component: RegisterPage });
 function RegisterPage() {
 	const [error, setError] = useState<string>();
 	const [pending, setPending] = useState(false);
-
-	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+	async function submit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		setError(undefined);
 		setPending(true);
@@ -32,28 +31,21 @@ function RegisterPage() {
 			setPending(false);
 		}
 	}
-
 	return (
 		<main className="page-shell narrow">
 			<h1>Create your Mailflare account</h1>
-			<form className="card" onSubmit={handleSubmit}>
+			<form className="card" onSubmit={submit}>
 				<label>
 					Name
-					<input name="name" autoComplete="name" required />
+					<input name="name" required />
 				</label>
 				<label>
 					Email
-					<input name="email" type="email" autoComplete="email" required />
+					<input name="email" type="email" required />
 				</label>
 				<label>
 					Password
-					<input
-						name="password"
-						type="password"
-						autoComplete="new-password"
-						minLength={12}
-						required
-					/>
+					<input name="password" type="password" minLength={12} required />
 				</label>
 				{error && <p role="alert">{error}</p>}
 				<button className="button primary" type="submit" disabled={pending}>

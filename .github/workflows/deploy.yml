@@ -213,6 +213,6 @@ jobs:
             echo "::error::Expected unauthenticated login redirect at $path, got ${status:-empty} ${location:-empty}"
             return 1
           }
-          for path in /inbox /settings /admin /compose /sent /drafts /archived /trash /spam /starred /snoozed /contacts /folders /calendar /admin/domains /admin/mailboxes /admin/backups; do
+          for path in /inbox /settings /admin /compose /sent /drafts /archived /trash /spam /starred /snoozed /contacts /folders /calendar /admin/domains /admin/mailboxes /admin/backups /admin/accounts /admin/activity /admin/api-keys /admin/routing /admin/webhooks; do
             check_login_redirect "$path"
           done

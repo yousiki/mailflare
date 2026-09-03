@@ -1,29 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { mailflareClient } from "~/client/orpc";
 
 type SetupStep = "administrator" | "domain" | "mailbox" | "complete";
-
-type RpcResult<T> = {
-	json?: T;
-	message?: string;
-	error?: { message?: string };
-};
-
 export const Route = createFileRoute("/setup")({ component: SetupPage });
-
-async function postRpc<T>(path: string, data: unknown): Promise<T> {
-	const response = await fetch(`/api/rpc/${path}`, {
-		method: "POST",
-		credentials: "same-origin",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ json: data }),
-	});
-	const result = (await response.json()) as RpcResult<T>;
-	if (!response.ok)
-		throw new Error(result.error?.message ?? result.message ?? "Setup request failed.");
-	if (result.json === undefined) throw new Error("Setup returned no result.");
-	return result.json;
-}
 
 function SetupPage() {
 	const [step, setStep] = useState<SetupStep>("administrator");
@@ -32,10 +12,20 @@ function SetupPage() {
 	const [mailboxAddress, setMailboxAddress] = useState("");
 	const [error, setError] = useState<string>();
 	const [pending, setPending] = useState(false);
-
-	async function submitAdministrator(event: FormEvent<HTMLFormElement>) {
+	async function run(action: () => Promise<void>) {
+		setError(undefined);
+		setPending(true);
+		try {
+			await action();
+		} catch (cause) {
+			setError(cause instanceof Error ? cause.message : "Unable to complete setup.");
+		} finally {
+			setPending(false);
+		}
+	}
+	function administrator(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		await submitStep(async () => {
+		void run(async () => {
 			const form = new FormData(event.currentTarget);
 			const response = await fetch("/api/setup/admin", {
 				method: "POST",
@@ -48,66 +38,44 @@ function SetupPage() {
 				}),
 			});
 			const result = (await response.json()) as { error?: string };
-			if (!response.ok) throw new Error(result.error ?? "Unable to complete setup.");
+			if (!response.ok) throw new Error(result.error ?? "Unable to create the administrator.");
 			setStep("domain");
 		});
 	}
-
-	async function submitDomain(event: FormEvent<HTMLFormElement>) {
+	function domain(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		await submitStep(async () => {
-			const form = new FormData(event.currentTarget);
-			const result = await postRpc<{ id: string; hostname: string }>("domains/add", {
-				hostname: form.get("hostname"),
+		void run(async () => {
+			const result = await mailflareClient.domains.add({
+				hostname: String(new FormData(event.currentTarget).get("hostname")),
 			});
 			setDomainId(result.id);
 			setDomainName(result.hostname);
 			setStep("mailbox");
 		});
 	}
-
-	async function submitMailbox(event: FormEvent<HTMLFormElement>) {
+	function mailbox(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		await submitStep(async () => {
+		void run(async () => {
 			const form = new FormData(event.currentTarget);
-			const result = await postRpc<{ email: string }>("mailboxes/create", {
+			const result = await mailflareClient.mailboxes.create({
 				domainId,
-				localPart: form.get("localPart"),
-				displayName: form.get("displayName"),
+				localPart: String(form.get("localPart")),
+				displayName: String(form.get("displayName") || "") || undefined,
 			});
 			setMailboxAddress(result.email);
 			setStep("complete");
 		});
 	}
-
-	async function submitStep(action: () => Promise<void>) {
-		setError(undefined);
-		setPending(true);
-		try {
-			await action();
-		} catch (cause) {
-			setError(cause instanceof Error ? cause.message : "Unable to complete setup.");
-		} finally {
-			setPending(false);
-		}
-	}
-
-	if (step === "domain") {
+	if (step === "domain")
 		return (
 			<main className="page-shell narrow">
 				<p className="eyebrow">Step 2 of 3</p>
 				<h1>Add your domain</h1>
 				<p>Connect a domain that Cloudflare Email Routing will deliver to Mailflare.</p>
-				<form className="card" onSubmit={submitDomain}>
+				<form className="card" onSubmit={domain}>
 					<label>
 						Domain
-						<input
-							name="hostname"
-							type="text"
-							placeholder="example.com"
-							autoComplete="url"
-							required
-						/>
+						<input name="hostname" placeholder="example.com" required />
 					</label>
 					{error && <p role="alert">{error}</p>}
 					<button className="button primary" type="submit" disabled={pending}>
@@ -116,28 +84,20 @@ function SetupPage() {
 				</form>
 			</main>
 		);
-	}
-
-	if (step === "mailbox") {
+	if (step === "mailbox")
 		return (
 			<main className="page-shell narrow">
 				<p className="eyebrow">Step 3 of 3</p>
 				<h1>Create your mailbox</h1>
 				<p>Choose the first address for {domainName}.</p>
-				<form className="card" onSubmit={submitMailbox}>
+				<form className="card" onSubmit={mailbox}>
 					<label>
 						Address
-						<input
-							name="localPart"
-							type="text"
-							placeholder="inbox"
-							pattern="[A-Za-z0-9._%+-]+"
-							required
-						/>
+						<input name="localPart" placeholder="inbox" pattern="[A-Za-z0-9._%+-]+" required />
 					</label>
 					<label>
 						Display name
-						<input name="displayName" type="text" placeholder="My inbox" />
+						<input name="displayName" placeholder="My inbox" />
 					</label>
 					{error && <p role="alert">{error}</p>}
 					<button className="button primary" type="submit" disabled={pending}>
@@ -146,9 +106,7 @@ function SetupPage() {
 				</form>
 			</main>
 		);
-	}
-
-	if (step === "complete") {
+	if (step === "complete")
 		return (
 			<main className="page-shell narrow">
 				<p className="eyebrow">Setup complete</p>
@@ -162,31 +120,23 @@ function SetupPage() {
 				</section>
 			</main>
 		);
-	}
-
 	return (
 		<main className="page-shell narrow">
 			<p className="eyebrow">Step 1 of 3</p>
 			<h1>Set up Mailflare</h1>
 			<p>Create the first administrator for this fresh installation.</p>
-			<form className="card" onSubmit={submitAdministrator}>
+			<form className="card" onSubmit={administrator}>
 				<label>
 					Name
-					<input name="name" autoComplete="name" required />
+					<input name="name" required />
 				</label>
 				<label>
 					Email
-					<input name="email" type="email" autoComplete="email" required />
+					<input name="email" type="email" required />
 				</label>
 				<label>
 					Password
-					<input
-						name="password"
-						type="password"
-						autoComplete="new-password"
-						minLength={12}
-						required
-					/>
+					<input name="password" type="password" minLength={12} required />
 				</label>
 				{error && <p role="alert">{error}</p>}
 				<button className="button primary" type="submit" disabled={pending}>
