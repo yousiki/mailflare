@@ -28,6 +28,7 @@ import { Route as SpamRouteImport } from './routes/spam'
 import { Route as StarredRouteImport } from './routes/starred'
 import { Route as TrashRouteImport } from './routes/trash'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminBackupsRouteImport } from './routes/admin/backups'
 import { Route as AdminDomainsRouteImport } from './routes/admin/domains'
 import { Route as AdminMailboxesRouteImport } from './routes/admin/mailboxes'
 
@@ -126,6 +127,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBackupsRoute = AdminBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDomainsRoute = AdminDomainsRouteImport.update({
   id: '/domains',
   path: '/domains',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/spam': typeof SpamRoute
   '/starred': typeof StarredRoute
   '/trash': typeof TrashRoute
+  '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
   '/admin/': typeof AdminIndexRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByTo {
   '/spam': typeof SpamRoute
   '/starred': typeof StarredRoute
   '/trash': typeof TrashRoute
+  '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
   '/admin': typeof AdminIndexRoute
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/spam': typeof SpamRoute
   '/starred': typeof StarredRoute
   '/trash': typeof TrashRoute
+  '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
   '/admin/': typeof AdminIndexRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/spam'
     | '/starred'
     | '/trash'
+    | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
     | '/admin/'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/spam'
     | '/starred'
     | '/trash'
+    | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
     | '/admin'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/spam'
     | '/starred'
     | '/trash'
+    | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
     | '/admin/'
@@ -433,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/backups': {
+      id: '/admin/backups'
+      path: '/backups'
+      fullPath: '/admin/backups'
+      preLoaderRoute: typeof AdminBackupsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/domains': {
       id: '/admin/domains'
       path: '/domains'
@@ -451,12 +470,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminBackupsRoute: typeof AdminBackupsRoute
   AdminDomainsRoute: typeof AdminDomainsRoute
   AdminMailboxesRoute: typeof AdminMailboxesRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBackupsRoute: AdminBackupsRoute,
   AdminDomainsRoute: AdminDomainsRoute,
   AdminMailboxesRoute: AdminMailboxesRoute,
   AdminIndexRoute: AdminIndexRoute,

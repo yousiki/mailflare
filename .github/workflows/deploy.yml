@@ -188,7 +188,7 @@ jobs:
             body="$(curl --silent --show-error --fail --location --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 "$base$path")"
             [[ "$body" == *"${public_expected[$path]}"* ]] || { echo "::error::Missing expected marker at $path"; exit 1; }
           done
-          for path in /inbox /settings /admin /compose /sent /drafts /archived /trash /spam /starred /snoozed /contacts /folders /calendar /admin/domains /admin/mailboxes; do
+          for path in /inbox /settings /admin /compose /sent /drafts /archived /trash /spam /starred /snoozed /contacts /folders /calendar /admin/domains /admin/mailboxes /admin/backups; do
             redirect="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}\t%{redirect_url}' --max-time 30 "$base$path")"
             status="${redirect%%$'\t'*}"
             location="${redirect#*$'\t'}"
