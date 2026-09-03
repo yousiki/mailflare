@@ -140,11 +140,18 @@ jobs:
           cat > "$cleanup_config" <<EOF
           {"name":"mailflare-r2-cleanup","main":"${GITHUB_WORKSPACE}/scripts/r2-empty-worker.ts","compatibility_date":"2026-05-20","r2_buckets":[{"binding":"BUCKET","bucket_name":"mailflare-raw","remote":true}]}
           EOF
-          cleanup_pid=""
           cleanup_log="$RUNNER_TEMP/mailflare-r2-empty.log"
+          cleanup_pid=""
           cleanup_config_path="$cleanup_config"
+          cleanup_stop() {
+            if [[ -n "$cleanup_pid" ]]; then
+              kill "$cleanup_pid" 2>/dev/null || true
+              wait "$cleanup_pid" 2>/dev/null || true
+            fi
+          }
+          trap cleanup_stop EXIT
           if bunx wrangler r2 bucket info mailflare-raw --config="$cleanup_config_path" --json >/dev/null 2>&1; then
-            bunx wrangler dev --remote --config="$cleanup_config_path" --port 8787 --show-interactive-dev-session=false > "$cleanup_log" 2>&1 &
+            bunx wrangler dev --remote --config="$cleanup_config_path" --port 8787 --show-interactive-dev-session=false >"$cleanup_log" 2>&1 &
             cleanup_pid=$!
             cleanup_ready=false
             for _ in {1..30}; do
@@ -156,14 +163,15 @@ jobs:
             done
             if [[ "$cleanup_ready" != "true" ]]; then
               cat "$cleanup_log"
-              kill "$cleanup_pid" 2>/dev/null || true
-              wait "$cleanup_pid" 2>/dev/null || true
               exit 1
             fi
+            curl --silent --show-error --fail --max-time 120 --request POST http://127.0.0.1:8787/empty
+            cleanup_stop
+            cleanup_pid=""
           fi
-          bunx wrangler r2 bucket delete mailflare-raw --config="$cleanup_config_path" || true
-          bunx wrangler queues delete mailflare-inbound --config="$cleanup_config_path" || true
-          bunx wrangler queues delete mailflare-outbound --config="$cleanup_config_path" || true
+          bunx wrangler r2 bucket delete mailflare-raw --config="$cleanup_config_path"
+          bunx wrangler queues delete mailflare-inbound --config="$cleanup_config_path"
+          bunx wrangler queues delete mailflare-outbound --config="$cleanup_config_path"
 
 
 
@@ -174,10 +182,6 @@ jobs:
         run: |
           set -euo pipefail
           base="https://${MAILFLARE_DOMAIN}"
-          for _ in {1..30}; do
-            if curl --silent --show-error --fail --location --max-time 10 "$base/" >/dev/null; then break; fi
-            sleep 2
-          done
           declare -A public_expected=(
             [/]="Your inbox"
             [/login]="Sign in to Mailflare"
@@ -185,13 +189,30 @@ jobs:
             [/setup]="Set up Mailflare"
           )
           for path in / /login /register /setup; do
-            body="$(curl --silent --show-error --fail --location --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 "$base$path")"
-            [[ "$body" == *"${public_expected[$path]}"* ]] || { echo "::error::Missing expected marker at $path"; exit 1; }
+            found=false
+            for _ in {1..30}; do
+              body="$(curl --silent --show-error --fail --compressed --location --max-time 30 "$base$path" || true)"
+              if [[ "$body" == *"${public_expected[$path]}"* ]]; then
+                found=true
+                break
+              fi
+              sleep 2
+            done
+            [[ "$found" == "true" ]] || { echo "::error::Missing expected marker at $path"; exit 1; }
           done
+          check_login_redirect() {
+            local path="$1"
+            local redirect status location
+            for _ in {1..30}; do
+              redirect="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}\t%{redirect_url}' --max-time 30 "$base$path" || true)"
+              status="${redirect%%$'\t'*}"
+              location="${redirect#*$'\t'}"
+              if [[ "$status" == "302" && "$location" == "$base/login" ]]; then return 0; fi
+              sleep 2
+            done
+            echo "::error::Expected unauthenticated login redirect at $path, got ${status:-empty} ${location:-empty}"
+            return 1
+          }
           for path in /inbox /settings /admin /compose /sent /drafts /archived /trash /spam /starred /snoozed /contacts /folders /calendar /admin/domains /admin/mailboxes /admin/backups; do
-            redirect="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}\t%{redirect_url}' --max-time 30 "$base$path")"
-            status="${redirect%%$'\t'*}"
-            location="${redirect#*$'\t'}"
-            [[ "$status" == "302" ]] || { echo "::error::Expected unauthenticated redirect at $path, got $status"; exit 1; }
-            [[ "$location" == "$base/login" ]] || { echo "::error::Expected login redirect at $path"; exit 1; }
+            check_login_redirect "$path"
           done
