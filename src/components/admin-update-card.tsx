@@ -59,14 +59,14 @@ export function AdminUpdateCard() {
 				<div>
 					<CardTitle className="text-base">Application update</CardTitle>
 					<p className="mt-1 text-sm text-neutral-500">
-						Sync the latest Mailflare release, apply D1 migrations, and deploy the Worker.
+						Prepare an upstream update pull request for review before deployment.
 					</p>
 				</div>
 			</CardHeader>
 			<CardContent className="flex items-center gap-4 pt-5">
 				<Button type="button" onClick={handleUpdate} disabled={isChecking || isPending || !status?.available}>
 					<RefreshCw className={isPending ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-					{isPending ? "Starting update..." : "Update Mailflare"}
+					{isPending ? "Starting update..." : "Prepare update PR"}
 				</Button>
 				{isChecking && <Skeleton className="h-4 w-44" />}
 				{!isChecking && status?.available && (
@@ -79,7 +79,7 @@ export function AdminUpdateCard() {
 				)}
 				{result?.ok && (
 					<p className="text-sm text-green-700">
-						Update started for {result.repository}@{result.ref}.{" "}
+						Update workflow started. Review the pull request before merging. {" "}
 						{result.runUrl && (
 							<a className="font-medium underline" href={result.runUrl} target="_blank" rel="noreferrer">
 								View workflow

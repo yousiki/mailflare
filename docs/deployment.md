@@ -81,26 +81,36 @@ Manual and scheduled backups use the `DATABASE_BACKUP_WORKFLOW` binding declared
 
 ## Updating Mailflare
 
-The **Update Mailflare** button in the admin dashboard dispatches `.github/workflows/update.yml` in the installation repository. The workflow merges the latest upstream source, applies pending D1 migrations, and pushes the updated source. A connected Cloudflare Git integration can then build and deploy the change.
+The **Update Mailflare** button in the admin dashboard dispatches
+`.github/workflows/deploy-update.yml` in the installation repository. The workflow imports
+the selected upstream branch into a new update branch and opens a pull request against the
+configured base branch. It does not push directly to the deployment branch or apply D1
+migrations. Review and merge the pull request; merging into `main` triggers
+`.github/workflows/deploy.yml`, which applies migrations and deploys the Worker.
 
 Configure these Worker values:
 
-- `GITHUB_UPDATE_TOKEN` — a fine-grained GitHub token for the installation repository with Actions write permission.
+- `GITHUB_UPDATE_TOKEN` — a fine-grained GitHub token for the installation repository with
+  Actions write permission, used by the dashboard to dispatch the workflow.
 - `GITHUB_UPDATE_REPO` — the installation repository in `owner/repository` format.
-- `GITHUB_UPDATE_REF` — an optional update branch. The repository's default branch is used when omitted.
+- `GITHUB_UPDATE_REF` — an optional base branch for the pull request. The repository's default
+  branch is used when omitted.
 
-Configure these GitHub Actions repository secrets:
+Configure these GitHub Actions repository settings:
 
-- `CLOUDFLARE_API_TOKEN` — a Cloudflare token allowed to read and migrate D1.
-- `CLOUDFLARE_ACCOUNT_ID` — the Cloudflare account ID.
-- `MAILFLARE_UPSTREAM_TOKEN` — required only when the upstream repository is private.
+- Allow GitHub Actions to create and approve pull requests if repository policy requires it.
+
+The updater workflow itself uses the built-in `GITHUB_TOKEN` with `contents: write` and
+`pull-requests: write` permissions to push the update branch and create the pull request.
 
 Optional repository variables:
 
-- `MAILFLARE_UPSTREAM_REPOSITORY` — the upstream repository. Defaults to `hieunc229/mailflare`.
-- `MAILFLARE_UPSTREAM_BRANCH` — the upstream branch. Defaults to `main`.
+- `UPDATE_SOURCE_REPOSITORY` — the upstream repository. Defaults to `hieunc229/mailflare`.
+- `UPDATE_SOURCE_BRANCH` — the upstream branch. If omitted, the upstream repository's default
+  branch is detected automatically.
 
-If an older installation contains a failing updater, copy the latest `.github/workflows/update.yml` into that installation once. An updater that cannot read upstream cannot update its own workflow.
+If the upstream merge has conflicts, the workflow stops without pushing a branch. Resolve the
+conflicts locally, review the result, and push or merge the update manually.
 
 ## Self-hosted feature availability
 

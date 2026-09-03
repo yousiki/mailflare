@@ -141,7 +141,8 @@ environment variables:
 - `MAILFLARE_DOMAIN` — public Custom Domain, such as `mail.siki.moe`.
 - `CF_EMAIL_WORKER_NAME` — optional variable; defaults to `mailflare` and must match the
 deployed Worker script name.
-- `GITHUB_UPDATE_REF` — optional branch for the dashboard update workflow.
+- `GITHUB_UPDATE_REF` — optional base branch for the upstream update pull request; the
+  repository default branch is used when omitted.
 - `GITHUB_UPDATE_REPO` — optional installation repository in `owner/repository` format.
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — optional public Turnstile site key.
 
@@ -156,8 +157,8 @@ calls. It needs the permissions described in the setup section.
 - `CF_AID` — account ID used by the backup workflow.
 - `D1_BACKUP_TOKEN` — optional token allowed to export the D1 database.
 - `TURNSTILE_SECRET_KEY` — optional Turnstile server secret.
-- `GITHUB_UPDATE_TOKEN` — optional GitHub token with Actions write permission for the
-dashboard update button.
+- `GITHUB_UPDATE_TOKEN` — optional fine-grained GitHub token with Actions write permission for
+  the dashboard update button.
 - `CF_EMAIL` and `CF_API_KEY` — optional legacy Global API Key credentials; use these only
 instead of `CF_TOKEN`.
 
@@ -198,9 +199,11 @@ does not provide them.
 
 ### Dashboard updates
 
-The admin overview can dispatch `.github/workflows/deploy-update.yml`. That workflow merges
-upstream source changes and pushes them to the installation branch. The push then triggers
-`.github/workflows/deploy.yml`, which builds and deploys the updated Worker.
+The admin overview can dispatch `.github/workflows/deploy-update.yml`. The workflow imports
+the selected upstream branch into a new update branch and opens a pull request against the
+configured base branch. It does not push directly to the deployment branch or modify the
+production database. Review and merge the pull request; the merge into `main` then triggers
+`.github/workflows/deploy.yml`, which applies D1 migrations and deploys the updated Worker.
 
 ### Manual local deployment
 

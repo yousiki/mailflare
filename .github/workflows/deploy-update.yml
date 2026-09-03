@@ -1,70 +1,110 @@
-name: Dashboard Update
+name: Import Upstream Updates
 
 on:
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-update-${{ github.repository }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  UPDATE_SOURCE_REPOSITORY: ${{ vars.UPDATE_SOURCE_REPOSITORY || 'hieunc229/mailflare' }}
+  UPDATE_SOURCE_BRANCH: ${{ vars.UPDATE_SOURCE_BRANCH || '' }}
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      UPDATE_SOURCE_REPOSITORY: ${{ vars.UPDATE_SOURCE_REPOSITORY || 'hieunc229/mailflare' }}
 
     steps:
-      - name: Checkout repository
+      - name: Check out base branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
-      - name: Merge upstream changes
+      - name: Merge upstream into update branch
+        id: prepare
+        env:
+          BASE_BRANCH: ${{ github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
           git config user.name "mailflare-update"
           git config user.email "mailflare-update@users.noreply.github.com"
 
-          upstream_url="https://github.com/${UPDATE_SOURCE_REPOSITORY}.git"
-          if git remote get-url upstream >/dev/null 2>&1; then
-            git remote set-url upstream "${upstream_url}"
-          else
-            git remote add upstream "${upstream_url}"
+          if [[ ! "$UPDATE_SOURCE_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+            echo "::error::UPDATE_SOURCE_REPOSITORY must use owner/repository format."
+            exit 1
           fi
+
+          upstream_url="https://github.com/${UPDATE_SOURCE_REPOSITORY}.git"
+          git remote add upstream "$upstream_url"
           git fetch --no-tags upstream
 
-          upstream_branch="$(git remote show upstream | sed -n 's/.*HEAD branch: //p')"
-          if [ -z "${upstream_branch}" ]; then
-            echo "::error::Could not resolve the default branch of ${UPDATE_SOURCE_REPOSITORY}."
+          upstream_branch="$UPDATE_SOURCE_BRANCH"
+          if [[ -z "$upstream_branch" ]]; then
+            upstream_branch="$(git remote show upstream | sed -n 's/.*HEAD branch: //p')"
+          fi
+          if [[ -z "$upstream_branch" ]]; then
+            echo "::error::Could not resolve the default branch of ${UPDATE_SOURCE_REPOSITORY}. Set UPDATE_SOURCE_BRANCH."
             exit 1
           fi
-          echo "Merging upstream/${upstream_branch} into ${GITHUB_REF_NAME}."
+          if ! git rev-parse --verify "refs/remotes/upstream/${upstream_branch}" >/dev/null 2>&1; then
+            echo "::error::Upstream branch not found: ${upstream_branch}"
+            exit 1
+          fi
 
-          # A merge keeps local modifications instead of overwriting them, and
-          # stops on conflict rather than silently discarding local work.
+          safe_base_branch="${BASE_BRANCH//\//-}"
+          update_branch="upstream-update/${safe_base_branch}-${RUN_ID}"
+          git switch --create "$update_branch" "$BASE_BRANCH"
+
+          echo "Merging upstream/${upstream_branch} into ${BASE_BRANCH} on ${update_branch}."
           if ! git merge --no-edit "upstream/${upstream_branch}"; then
             git merge --abort || true
-            echo "::error::Merge conflict with upstream/${upstream_branch}. Resolve it locally and push."
+            echo "::error::Merge conflict with upstream/${upstream_branch}. Resolve it locally and push a reviewed PR."
             exit 1
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Install dependencies
-        run: npm install --no-package-lock
-
-      - name: Apply database migrations
-        run: npx wrangler d1 migrations apply DB --remote
-
-      - name: Push update
-        run: |
-          set -euo pipefail
-          if [ -z "$(git log "origin/${GITHUB_REF_NAME}..HEAD" --oneline)" ]; then
-            echo "Repository is already up to date."
+          if [[ "$(git rev-list --count "${BASE_BRANCH}..HEAD")" == "0" ]]; then
+            echo "no_changes=true" >> "$GITHUB_OUTPUT"
+            echo "The base branch already contains the selected upstream changes."
             exit 0
           fi
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          echo "base_branch=${BASE_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "update_branch=${update_branch}" >> "$GITHUB_OUTPUT"
+          echo "upstream_branch=${upstream_branch}" >> "$GITHUB_OUTPUT"
+
+      - name: Push update branch
+        if: steps.prepare.outputs.no_changes != 'true'
+        env:
+          UPDATE_BRANCH: ${{ steps.prepare.outputs.update_branch }}
+        run: git push --set-upstream origin "$UPDATE_BRANCH"
+
+      - name: Open pull request
+        if: steps.prepare.outputs.no_changes != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ steps.prepare.outputs.base_branch }}
+          UPDATE_BRANCH: ${{ steps.prepare.outputs.update_branch }}
+          UPSTREAM_BRANCH: ${{ steps.prepare.outputs.upstream_branch }}
+        run: |
+          set -euo pipefail
+          pr_body="$(printf '%s\n\n%s\n' \
+            "This pull request imports upstream/${UPSTREAM_BRANCH} into ${BASE_BRANCH}." \
+            "Review fork-specific changes and resolve any compatibility concerns before merging. Production deployment will occur only after this pull request is merged into the deployment branch.")"
+          pr_url="$(gh pr create \
+            --base "$BASE_BRANCH" \
+            --head "$UPDATE_BRANCH" \
+            --title "chore: import upstream updates" \
+            --body "$pr_body")"
+          echo "Created pull request: ${pr_url}"
+          {
+            echo "### Upstream update pull request"
+            echo
+            echo "${pr_url}"
+          } >> "$GITHUB_STEP_SUMMARY"
