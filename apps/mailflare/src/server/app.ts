@@ -12,6 +12,6 @@ export const healthResponse = z.object({
 	status: z.literal("ok"),
 });
 
-export const app = new Hono<MailflareContext>().get("/health", (c) =>
+export const app = new Hono<MailflareContext>().get("/api/health", (c) =>
 	c.json(healthResponse.parse({ service: "mailflare", status: "ok" })),
 );

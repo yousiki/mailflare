@@ -173,7 +173,21 @@ jobs:
         run: |
           set -euo pipefail
           base="https://${MAILFLARE_DOMAIN}"
-          for path in / /login /register /setup /inbox /settings /admin; do
-            body="$(curl --fail --silent --show-error --location --max-time 30 "$base$path")"
-            [[ "$body" == *"Mailflare"* ]] || { echo "::error::Missing Mailflare marker at $path"; exit 1; }
+          for _ in {1..30}; do
+            if curl --silent --show-error --fail --location --max-time 10 "$base/" >/dev/null; then break; fi
+            sleep 2
+          done
+          declare -A expected=(
+            [/]="Your inbox"
+            [/login]="Sign in to Mailflare"
+            [/register]="Create your Mailflare account"
+            [/setup]="Set up Mailflare"
+            [/inbox]="Inbox"
+            [/settings]="Settings"
+            [/admin]="Admin"
+            [/compose]="Compose"
+          )
+          for path in / /login /register /setup /inbox /settings /admin /compose; do
+            body="$(curl --silent --show-error --fail --location --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 "$base$path")"
+            [[ "$body" == *"${expected[$path]}"* ]] || { echo "::error::Missing expected marker at $path"; exit 1; }
           done
