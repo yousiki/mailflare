@@ -178,17 +178,18 @@ jobs:
             if curl --silent --show-error --fail --location --max-time 10 "$base/" >/dev/null; then break; fi
             sleep 2
           done
-          declare -A expected=(
+          declare -A public_expected=(
             [/]="Your inbox"
             [/login]="Sign in to Mailflare"
             [/register]="Create your Mailflare account"
             [/setup]="Set up Mailflare"
-            [/inbox]="Inbox"
-            [/settings]="Settings"
-            [/admin]="Admin"
-            [/compose]="Compose"
           )
-          for path in / /login /register /setup /inbox /settings /admin /compose; do
+          for path in / /login /register /setup; do
             body="$(curl --silent --show-error --fail --location --retry 5 --retry-delay 2 --retry-all-errors --max-time 30 "$base$path")"
-            [[ "$body" == *"${expected[$path]}"* ]] || { echo "::error::Missing expected marker at $path"; exit 1; }
+            [[ "$body" == *"${public_expected[$path]}"* ]] || { echo "::error::Missing expected marker at $path"; exit 1; }
+          done
+          for path in /inbox /settings /admin /compose; do
+            headers="$(curl --silent --show-error --dump-header - --output /dev/null --max-time 30 "$base$path" | tr '[:upper:]' '[:lower:]')"
+            [[ "$headers" == *"http/2 302"* || "$headers" == *"http/1.1 302"* ]] || { echo "::error::Expected unauthenticated redirect at $path"; exit 1; }
+            [[ "$headers" == *"location: $base/login"* ]] || { echo "::error::Expected login redirect at $path"; exit 1; }
           done

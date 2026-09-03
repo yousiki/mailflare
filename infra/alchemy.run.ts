@@ -15,7 +15,7 @@ if (!authSecret) {
 export default Alchemy.Stack(
   "Mailflare",
   { providers: Cloudflare.providers(), state: Alchemy.localState() },
-  Effect.gen(function*() {
+  Effect.gen(function* () {
     const database = yield* Cloudflare.D1.Database("MailflareDatabase", {
       name: "mailflare",
       migrations: "drizzle/alchemy-migrations",

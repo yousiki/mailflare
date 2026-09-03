@@ -10,6 +10,7 @@ import { getDb } from "../../src/db";
 import { resolveInboundAddress } from "../../src/lib/email/routing";
 import { isInboundQueueMessage } from "../../worker-utils";
 import { app } from "./src/server/app";
+import { createMailflareAuth } from "./src/server/auth";
 import { rpcRouter } from "./src/server/rpc";
 import startHandler from "./dist/server/index.js";
 
@@ -27,6 +28,12 @@ const modernRoutes: Record<string, true> = {
 	"/admin": true,
 	"/compose": true,
 };
+const protectedRoutes: Record<string, true> = {
+	"/inbox": true,
+	"/settings": true,
+	"/admin": true,
+	"/compose": true,
+};
 
 async function handleRpc(request: Request): Promise<Response> {
 	const result = await rpcHandler.handle(request, { prefix: "/api/rpc" });
@@ -34,17 +41,28 @@ async function handleRpc(request: Request): Promise<Response> {
 	return new Response("Not Found", { status: 404 });
 }
 
+async function hasSession(request: Request, env: CloudflareEnv): Promise<boolean> {
+	const session = await createMailflareAuth(env).api.getSession({ headers: request.headers });
+	return session !== null;
+}
+
 export default {
-	fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
+	async fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
 		const { pathname } = new URL(request.url);
 		if (
 			pathname === "/api/health" ||
 			pathname === "/api/setup/admin" ||
 			pathname.startsWith("/api/auth/")
-		)
+		) {
 			return app.fetch(request, env);
+		}
 		if (pathname.startsWith("/api/rpc")) return handleRpc(request);
-		if (modernRoutes[pathname]) return startHandler.fetch(request, env, ctx);
+		if (modernRoutes[pathname]) {
+			if (protectedRoutes[pathname] && !(await hasSession(request, env))) {
+				return Response.redirect(new URL("/login", request.url), 302);
+			}
+			return startHandler.fetch(request, env, ctx);
+		}
 		return new Response("Not Found", { status: 404 });
 	},
 
