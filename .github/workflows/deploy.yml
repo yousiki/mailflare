@@ -145,7 +145,7 @@ jobs:
             bunx wrangler dev --remote --config="$cleanup_config_path" --port 8787 --show-interactive-dev-session=false > "$cleanup_log" 2>&1 &
             cleanup_pid=$!
             for _ in {1..30}; do
-              if curl --silent --fail --max-time 2 http://127.0.0.1:8787/ >/dev/null 2>&1; then break; fi
+              if curl --silent --fail --max-time 2 http://127.0.0.1:8787/health >/dev/null 2>&1; then break; fi
               sleep 1
             done
             curl --fail --silent --show-error --request POST http://127.0.0.1:8787/empty

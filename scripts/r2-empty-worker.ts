@@ -4,7 +4,11 @@ interface R2CleanupEnv {
 
 export default {
   async fetch(request: Request, env: R2CleanupEnv): Promise<Response> {
-    if (request.method !== "POST" || new URL(request.url).pathname !== "/empty") {
+    const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === "/health") {
+      return new Response("ok");
+    }
+    if (request.method !== "POST" || url.pathname !== "/empty") {
       return new Response("Not Found", { status: 404 });
     }
 
