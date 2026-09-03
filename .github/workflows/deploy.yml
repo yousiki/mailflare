@@ -122,10 +122,39 @@ jobs:
             cat "$RUNNER_TEMP/mailflare-worker-delete.json"
             exit 1
           fi
-          bunx wrangler d1 delete mailflare --skip-confirmation || true
-          bunx wrangler r2 bucket delete mailflare-raw || true
-          bunx wrangler queues delete mailflare-inbound || true
-          bunx wrangler queues delete mailflare-outbound || true
+
+          d1_list="$(curl --fail --silent --show-error --request GET \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database")"
+          d1_id="$(jq -r '.result[] | select(.name == "mailflare") | (.uuid // .database_id) // empty' <<< "$d1_list" | sed -n '1p')"
+          if [[ -n "$d1_id" ]]; then
+            d1_delete="$(curl --fail --silent --show-error --request DELETE \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              --header "Content-Type: application/json" \
+              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${d1_id}")"
+            jq -e '.success == true' <<< "$d1_delete" >/dev/null
+          fi
+
+          cleanup_config="$RUNNER_TEMP/mailflare-r2-cleanup-wrangler.jsonc"
+          printf '%s\n' '{"name":"mailflare-r2-cleanup","main":"scripts/r2-empty-worker.ts","compatibility_date":"2026-05-20","r2_buckets":[{"binding":"BUCKET","bucket_name":"mailflare-raw","remote":true}]}' > "$cleanup_config"
+          cleanup_pid=""
+          cleanup_log="$RUNNER_TEMP/mailflare-r2-empty.log"
+          cleanup_config_path="$cleanup_config"
+          if bunx wrangler r2 bucket info mailflare-raw --config="$cleanup_config_path" --json >/dev/null 2>&1; then
+            bunx wrangler dev --remote --config="$cleanup_config_path" --port 8787 --show-interactive-dev-session=false > "$cleanup_log" 2>&1 &
+            cleanup_pid=$!
+            for _ in {1..30}; do
+              if curl --silent --fail --max-time 2 http://127.0.0.1:8787/ >/dev/null 2>&1; then break; fi
+              sleep 1
+            done
+            curl --fail --silent --show-error --request POST http://127.0.0.1:8787/empty
+            kill "$cleanup_pid" 2>/dev/null || true
+            wait "$cleanup_pid" 2>/dev/null || true
+          fi
+          bunx wrangler r2 bucket delete mailflare-raw --config="$cleanup_config_path" || true
+          bunx wrangler queues delete mailflare-inbound --config="$cleanup_config_path" || true
+          bunx wrangler queues delete mailflare-outbound --config="$cleanup_config_path" || true
 
 
       - name: Deploy Alchemy infrastructure
