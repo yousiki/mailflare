@@ -53,7 +53,7 @@ export function getMailboxAddress(mailbox: Pick<MailboxOption, "localPart" | "ho
 }
 
 export function getEmailPageTitleCount(total: number, unread: number): number {
-	return unread > 0 ? unread : total;
+	return unread;
 }
 
 export function formatEmailPageTitle({ location, total, unread, emailAddress }: EmailPageTitleInput): string {
