@@ -2,6 +2,10 @@
 
 This guide covers Cloudflare deployment, runtime configuration, database backups, and application updates.
 
+This repository is a self-hosted fork of [upstream Mailflare](https://github.com/hieunc229/mailflare). The functionality already present in this repository is enabled by default for self-hosted deployments, including custom branding, account management, email forwarding, shared mailboxes, and delegated mailbox access. This availability is specific to this fork and does not represent or grant an upstream commercial Pro or Team license.
+
+Upstream attribution is retained. “Mailflare” and related names, logos, and trademarks belong to their respective owners; this fork is independent and is not affiliated with or endorsed by upstream.
+
 ## Overview
 
 Set up Mailflare in three steps:
@@ -98,6 +102,8 @@ Optional repository variables:
 
 If an older installation contains a failing updater, copy the latest `.github/workflows/update.yml` into that installation once. An updater that cannot read upstream cannot update its own workflow.
 
-## Branding license
+## Self-hosted feature availability
 
-Activate a purchased Pro or Team key from **Admin → Licenses**. Mailflare sends the key to Paymug and stores only a one-way hash and the activation state. Apply all D1 migrations before activating a license.
+No commercial license key or online activation is required for this self-hosted fork, and it does not depend on Paymug. The current functionality in this repository is available after deployment without a separate licensing step; follow the setup and configuration steps above.
+
+The source code is released under the GNU Affero General Public License v3.0 (AGPLv3). See the repository [LICENSE](../LICENSE) for the complete terms. This license and the self-hosted defaults are specific to this fork and should not be presented as an official upstream Pro or Team license.

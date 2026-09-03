@@ -4,6 +4,10 @@
 
 Mailflare is a self-hosted email inbox for custom domains, built on Cloudflare.
 
+This repository is a self-hosted fork of [upstream Mailflare](https://github.com/hieunc229/mailflare). In self-hosted mode, the functionality already present in this repository is enabled by default, including custom branding, account management, email forwarding, shared mailboxes, and delegated mailbox access. This is a property of this fork and does not represent or grant an upstream commercial Pro or Team license.
+
+Upstream attribution is retained. “Mailflare” and related names, logos, and trademarks belong to their respective owners; this fork is independent and is not affiliated with or endorsed by upstream.
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/hieunc229/mailflare)
 
 ![Mailflare inbox](/screenshot.png)
@@ -75,7 +79,9 @@ Add your Cloudflare credentials to `.dev.vars`, then open [http://localhost:3000
 - [API and integrations](docs/api.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
-## License
+## License and upstream attribution
+
+The source code in this repository is released under the GNU Affero General Public License v3.0 (AGPLv3). See [LICENSE](LICENSE) for the complete license text. Self-hosted use does not require a commercial license key or online activation service and does not depend on Paymug.
 
 Received MIME attachments are extracted automatically. Downloads require access to the mailbox
 containing the message.
