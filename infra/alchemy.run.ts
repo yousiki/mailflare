@@ -10,8 +10,9 @@ if (!domain && process.env.ALCHEMY_STAGE === "production") {
 
 export default Alchemy.Stack(
   "Mailflare",
-  { providers: Cloudflare.providers(), state: Alchemy.localState() },
-  Effect.gen(function*() {
+  { providers: Cloudflare.providers(), state: Cloudflare.state() },
+  Effect.gen(function* () {
+    const authSecret = yield* Alchemy.makeRandom("BetterAuthSecret", { bytes: 32 });
     const database = yield* Cloudflare.D1.Database("MailflareDatabase", {
       name: "mailflare",
       migrations: "drizzle/alchemy-migrations",
@@ -52,6 +53,8 @@ export default Alchemy.Stack(
           simple: { limit: 20, period: 60 },
         }),
         CF_EMAIL_WORKER_NAME: "mailflare",
+        BETTER_AUTH_SECRET: authSecret,
+        BETTER_AUTH_URL: domain ? `https://${domain}` : "http://localhost:3000",
         CF_TOKEN: Redacted.make(process.env.CF_TOKEN ?? ""),
         CF_AID: Redacted.make(process.env.CF_AID ?? ""),
         D1_BACKUP_TOKEN: Redacted.make(process.env.D1_BACKUP_TOKEN ?? ""),

@@ -11,6 +11,8 @@ interface CloudflareEnv {
 		import("./src/lib/realtime/hub").RealtimeHub
 	>;
 	DATABASE_BACKUP_WORKFLOW?: Workflow<import("./src/lib/backups/types").BackupWorkflowParams>;
+	BETTER_AUTH_SECRET: string;
+	BETTER_AUTH_URL: string;
 	LOGIN_RATE_LIMIT?: RateLimit;
 	CF_TOKEN?: string;
 	CF_API_KEY?: string;

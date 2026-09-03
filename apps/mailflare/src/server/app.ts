@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { createMailflareAuth } from "./auth";
+import { createInitialAdministrator, SetupAlreadyCompletedError } from "./setup";
 
-export type MailflareBindings = Record<string, unknown>;
+export type MailflareBindings = CloudflareEnv;
 
 export type MailflareContext = {
 	Bindings: MailflareBindings;
@@ -12,6 +14,41 @@ export const healthResponse = z.object({
 	status: z.literal("ok"),
 });
 
-export const app = new Hono<MailflareContext>().get("/api/health", (c) =>
-	c.json(healthResponse.parse({ service: "mailflare", status: "ok" })),
-);
+const setupInput = z.object({
+	name: z.string().trim().min(1).max(120),
+	email: z.email(),
+	password: z.string().min(12).max(256),
+});
+
+export const app = new Hono<MailflareContext>()
+	.get("/api/health", (c) => c.json(healthResponse.parse({ service: "mailflare", status: "ok" })))
+	.on(["GET", "POST"], "/api/auth/*", async (c) => {
+		const auth = createMailflareAuth(c.env);
+		return auth.handler(c.req.raw);
+	})
+	.post("/api/setup/admin", async (c) => {
+		try {
+			const input = setupInput.parse(await c.req.json());
+			const auth = createMailflareAuth(c.env);
+			const result = await auth.api.signUpEmail({
+				returnHeaders: true,
+				headers: c.req.raw.headers,
+				body: input,
+			});
+			const administrator = await createInitialAdministrator(c.env, {
+				...input,
+				id: result.response.user.id,
+			});
+			const response = Response.json({ user: administrator }, { status: 201 });
+			result.headers.forEach((value, key) => response.headers.append(key, value));
+			return response;
+		} catch (error) {
+			if (error instanceof SetupAlreadyCompletedError) {
+				return c.json({ error: error.message }, 409);
+			}
+			if (error instanceof z.ZodError) {
+				return c.json({ error: "Invalid setup details." }, 400);
+			}
+			return c.json({ error: "Unable to create the administrator." }, 500);
+		}
+	});

@@ -37,7 +37,12 @@ async function handleRpc(request: Request): Promise<Response> {
 export default {
 	fetch(request: Request, env: CloudflareEnv, ctx: ExecutionContext) {
 		const { pathname } = new URL(request.url);
-		if (pathname === "/api/health") return app.fetch(request, env);
+		if (
+			pathname === "/api/health" ||
+			pathname === "/api/setup/admin" ||
+			pathname.startsWith("/api/auth/")
+		)
+			return app.fetch(request, env);
 		if (pathname.startsWith("/api/rpc")) return handleRpc(request);
 		if (modernRoutes[pathname]) return startHandler.fetch(request, env, ctx);
 		return new Response("Not Found", { status: 404 });
