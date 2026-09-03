@@ -60,3 +60,11 @@ export async function revokeSharedInboxAccess(id: string, userId: string): Promi
 	const json = (await res.json()) as { error?: string };
 	if (!res.ok) throw new Error(json.error ?? "Failed to remove account");
 }
+
+export async function deleteMailbox(id: string): Promise<void> {
+	const res = await authFetch(`/api/mailboxes/${id}`, { method: "DELETE" });
+	const json = (await res.json()) as { error?: string };
+	if (!res.ok) throw new Error(json.error ?? "Failed to delete mailbox");
+
+	clearMailboxesCache();
+}

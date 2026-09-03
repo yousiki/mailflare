@@ -14,7 +14,7 @@ Adding or removing a domain from Mailflare also updates Cloudflare Email Routing
 | `DELETE /api/domains/[id]` | Remove a domain and clean up its Cloudflare resources |
 | `GET /api/domains/[id]/dns` | View its routing and sending DNS status |
 
-The hostname must be the apex of a zone available to the configured Cloudflare credentials, or a subdomain of that zone. Creating a mailbox also creates the Cloudflare Email Routing rule that delivers its address to `CF_EMAIL_WORKER_NAME`.
+The hostname must be the apex of a zone available to the configured Cloudflare credentials, or a subdomain of that zone. Creating a mailbox also creates the Cloudflare Email Routing rule that delivers its address to the `mailflare` Worker.
 
 ## Sending email
 

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { AppDatabase } from "@/db";
 import { domains, mailboxes } from "@/db/schema";
-import { ensureEmailRoutingRuleToWorker } from "@/lib/cloudflare-api";
+import { deleteEmailRoutingRuleForAddress, ensureEmailRoutingRuleToWorker } from "@/lib/cloudflare-api";
 import type { MailboxDomainAddressInput } from "./domain-addresses-types";
 
 export async function getMailboxDomainAddresses(
@@ -62,6 +62,34 @@ export async function ensureMailboxDomainRouting(
 			const hostname = address.slice(address.lastIndexOf("@") + 1);
 			const domain = domainsByHostname.get(hostname);
 			if (domain) await ensureEmailRoutingRuleToWorker(env, domain.zoneId, address);
+		}),
+	);
+}
+
+export async function removeMailboxDomainRouting(
+	env: CloudflareEnv,
+	db: AppDatabase,
+	mailbox: MailboxDomainAddressInput,
+): Promise<void> {
+	const addresses = await getMailboxDomainAddresses(db, mailbox);
+	if (addresses.length === 0) return;
+	const [primaryDomain] = await db
+		.select({ userId: domains.userId })
+		.from(domains)
+		.where(eq(domains.id, mailbox.domainId))
+		.limit(1);
+	if (!primaryDomain) return;
+	const availableDomains = await db
+		.select({ hostname: domains.hostname, zoneId: domains.zoneId })
+		.from(domains)
+		.where(eq(domains.userId, primaryDomain.userId));
+	const domainsByHostname = new Map(availableDomains.map((domain) => [domain.hostname.toLowerCase(), domain]));
+
+	await Promise.all(
+		addresses.map(async (address) => {
+			const hostname = address.slice(address.lastIndexOf("@") + 1);
+			const domain = domainsByHostname.get(hostname);
+			if (domain) await deleteEmailRoutingRuleForAddress(env, domain.zoneId, address);
 		}),
 	);
 }

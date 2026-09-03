@@ -11,11 +11,6 @@ export function getSetupRequirementChecks(env: CloudflareEnv): SetupRequirementC
 			message: "Set CF_TOKEN, or set both CF_API_KEY and CF_EMAIL.",
 		},
 		{
-			key: "Email Worker name",
-			configured: !!env.CF_EMAIL_WORKER_NAME?.trim(),
-			message: "Set CF_EMAIL_WORKER_NAME to the deployed Worker name.",
-		},
-		{
 			key: "D1 database",
 			configured: !!env.DB,
 			message: "Deploy the Worker with the DB binding from wrangler.jsonc.",

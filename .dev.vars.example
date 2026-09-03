@@ -1,20 +1,19 @@
-NEXTJS_ENV=development
 # Preferred: scoped API token.
 # This is an app runtime token, not the Cloudflare deploy/build token.
 CF_TOKEN=your_api_token_with_zone_email_permissions
 # Optional account id. Read by the database backup workflow.
-CF_AID=your_account_id
-CF_EMAIL_WORKER_NAME=mailflare
+# CF_AID=your_account_id
 
 # Optional: lets the admin dashboard trigger the GitHub update workflow.
-GITHUB_UPDATE_TOKEN=github_pat_with_actions_write
-GITHUB_UPDATE_REPO=owner/repo
-GITHUB_UPDATE_REF=main
+# GITHUB_UPDATE_TOKEN=github_pat_with_actions_write
+# GITHUB_UPDATE_REPO=owner/repo
+# GITHUB_UPDATE_REF=main
 
 # Optional: required for manual and scheduled D1 database backups.
-D1_DATABASE_ID=your_d1_database_id
+# D1_DATABASE_ID=your_d1_database_id
+
 # Omit this when CF_TOKEN also has permission to export the D1 database.
-D1_BACKUP_TOKEN=cloudflare_api_token_allowed_to_export_d1
+# D1_BACKUP_TOKEN=cloudflare_api_token_allowed_to_export_d1
 
 # Legacy Global API Key alternative. Use this only instead of CF_TOKEN.
 # CF_EMAIL=you@example.com

@@ -5,7 +5,7 @@ import { mailboxes, users } from "@/db/schema";
 import { requireUser } from "@/lib/auth/cookies";
 import { getEnv } from "@/lib/cloudflare";
 import { getMailboxAccessLevel } from "@/lib/mailboxes/access";
-import { ensureMailboxDomainRouting } from "@/lib/mailboxes/domain-addresses";
+import { ensureMailboxDomainRouting, removeMailboxDomainRouting } from "@/lib/mailboxes/domain-addresses";
 import { updateMailboxSchema } from "@/lib/validators";
 import type { MailboxRouteParams } from "./types";
 import { getMailboxUpdateValues, selectMailboxForUser } from "./utils";
@@ -105,6 +105,19 @@ export async function DELETE(request: Request, { params }: MailboxRouteParams) {
 		allowed = mailbox.userId === user.id || owner?.createdByUserId === user.id;
 	}
 	if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+	try {
+		await removeMailboxDomainRouting(env, db, {
+			id: mailbox.id,
+			domainId: mailbox.domainId,
+			localPart: mailbox.localPart,
+			useAllDomains: mailbox.useAllDomains,
+		});
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Failed to remove Cloudflare routing rule";
+		return NextResponse.json({ error: message }, { status: 502 });
+	}
+
 	await db.delete(mailboxes).where(eq(mailboxes.id, id));
 	return NextResponse.json({ ok: true });
 }

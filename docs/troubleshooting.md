@@ -49,7 +49,7 @@ Also confirm that `CF_AID` and `D1_DATABASE_ID` are set, and that `D1_BACKUP_TOK
 
 Confirm that:
 
-- `CF_EMAIL_WORKER_NAME` exactly matches the deployed Worker name.
-- `services[].service` in `wrangler.jsonc` uses the same name.
+- The deployed Worker is named `mailflare`.
+- `services[].service` in `wrangler.jsonc` is also `mailflare`.
 - Email Routing is enabled for the domain in Cloudflare.
 - The mailbox has an Email Routing rule pointing to the Worker.

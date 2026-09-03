@@ -6,7 +6,7 @@ export async function ensureEmailRoutingCatchAllToWorker(
 	env: CloudflareEnv,
 	zoneId: string,
 ): Promise<CfEmailRoutingRule> {
-	const workerName = getEmailWorkerName(env);
+	const workerName = getEmailWorkerName();
 	return cfRequest<CfEmailRoutingRule>(
 		env,
 		`/zones/${zoneId}/email/routing/rules/catch_all`,

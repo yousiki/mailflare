@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="/public/icon-96.png" alt="Mailflare" width="72" />
-</p>
+<img src="/public/icon-96.png" alt="Mailflare" width="72" />
 
 # Mailflare
 
@@ -9,6 +7,14 @@ Mailflare is a self-hosted email inbox for custom domains, built on Cloudflare.
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/hieunc229/mailflare)
 
 ![Mailflare inbox](/screenshot.png)
+
+Thanks to mailflare sponsors. Want to support the project? Drop [@hieuSSR](https://x.com/hieuSSR) a message
+
+### Featured sponsors
+
+<a target="_blank" href="https://sequenzy.com/?ref=hieunc229/mailflare">
+  <img width="160" src="/sponsors/sequenzy.png" alt="Sequenzy">
+</a>
 
 ## What you can do
 
@@ -42,15 +48,15 @@ A [Paid Worker](https://developers.cloudflare.com/workers/platform/pricing/) pla
 
 ## Deploy
 
-The easiest way to get started is with the **Deploy to Cloudflare** button above. You will need:
+Getting started takes three steps:
 
-- A Cloudflare account.
-- A domain managed by Cloudflare.
-- A Cloudflare API token that Mailflare can use to configure email routing.
+1. **Deploy the app.** Click **Deploy to Cloudflare** and keep the app name as `mailflare`. The app will not work correctly under another Worker name.
+2. **Complete setup.** Open the deployed app and follow `/setup` to check the installation and create your admin account.
+3. **Connect your domain.** Add a domain managed by the same Cloudflare account. Mailflare configures its email routing and helps you create the first mailbox.
 
-After deployment, open your Mailflare URL and follow the first-run setup. The setup checks your Cloudflare configuration, creates the initial account, and helps you connect your first domain.
+`CF_TOKEN` is required during deployment. Use a scoped Cloudflare API token with **Zone Read**, **Email Routing Edit**, **Email Sending Edit**, and **Email Routing Rules Write** permissions for the domains you want to connect. This runtime token is separate from the token Cloudflare uses to deploy the app.
 
-See the [deployment guide](docs/deployment.md) for required permissions, manual deployment, backups, updates, and custom Worker names.
+See the [deployment guide](docs/deployment.md) for required permissions, manual deployment, backups, and updates.
 
 ## Local development
 

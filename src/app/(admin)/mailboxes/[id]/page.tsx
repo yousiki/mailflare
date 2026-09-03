@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, Trash2, UserPlus } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  deleteMailbox,
   fetchMailbox,
   fetchSharedInboxAccess,
   getMailboxAddress,
@@ -54,6 +55,15 @@ export default function MailboxSettingsPage() {
     onSuccess: (updatedMailbox) => {
       qc.setQueryData(["mailbox", mailboxId], updatedMailbox);
       qc.invalidateQueries({ queryKey: ["mailboxes"] });
+    },
+  });
+
+  const router = useRouter();
+  const removeMailbox = useMutation({
+    mutationFn: () => deleteMailbox(mailboxId),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["mailboxes"] });
+      router.push("/mailboxes");
     },
   });
 
@@ -247,6 +257,44 @@ export default function MailboxSettingsPage() {
           </CardContent>
         </Card>
       )}
+      <Card className="rounded-3xl border-0 bg-white p-6">
+        <CardHeader className="py-0">
+          <CardTitle className="text-red-700">Danger zone</CardTitle>
+          <CardDescription>
+            Deleting this mailbox removes its Cloudflare Email Routing rule, so
+            new mail sent to {address || "this address"} will no longer be
+            accepted. Messages already received are kept in the database but
+            will no longer appear in any inbox. This cannot be undone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-5">
+          {removeMailbox.isError && (
+            <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {removeMailbox.error instanceof Error
+                ? removeMailbox.error.message
+                : "Failed to delete mailbox"}
+            </p>
+          )}
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={!mailbox.data || removeMailbox.isPending}
+            onClick={() => {
+              if (
+                !window.confirm(
+                  `Delete ${address}? This removes its email routing rule and cannot be undone.`,
+                )
+              )
+                return;
+              removeMailbox.mutate();
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+            {removeMailbox.isPending ? "Deleting..." : "Delete mailbox"}
+          </Button>
+        </CardContent>
+      </Card>
+
 {/* 
       <Card className="rounded-3xl border-0 bg-white p-6">
         <CardHeader className="py-0">
