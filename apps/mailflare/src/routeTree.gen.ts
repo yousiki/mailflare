@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ArchivedRouteImport } from './routes/archived'
+import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ComposeRouteImport } from './routes/compose'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as DraftsRouteImport } from './routes/drafts'
@@ -43,6 +44,11 @@ const AdminRoute = AdminRouteImport.update({
 const ArchivedRoute = ArchivedRouteImport.update({
   id: '/archived',
   path: '/archived',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComposeRoute = ComposeRouteImport.update({
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/archived': typeof ArchivedRoute
+  '/calendar': typeof CalendarRoute
   '/compose': typeof ComposeRoute
   '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/archived': typeof ArchivedRoute
+  '/calendar': typeof CalendarRoute
   '/compose': typeof ComposeRoute
   '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/archived': typeof ArchivedRoute
+  '/calendar': typeof CalendarRoute
   '/compose': typeof ComposeRoute
   '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/archived'
+    | '/calendar'
     | '/compose'
     | '/contacts'
     | '/drafts'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/archived'
+    | '/calendar'
     | '/compose'
     | '/contacts'
     | '/drafts'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/archived'
+    | '/calendar'
     | '/compose'
     | '/contacts'
     | '/drafts'
@@ -269,6 +281,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   ArchivedRoute: typeof ArchivedRoute
+  CalendarRoute: typeof CalendarRoute
   ComposeRoute: typeof ComposeRoute
   ContactsRoute: typeof ContactsRoute
   DraftsRoute: typeof DraftsRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/archived'
       fullPath: '/archived'
       preLoaderRoute: typeof ArchivedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compose': {
@@ -448,6 +468,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   ArchivedRoute: ArchivedRoute,
+  CalendarRoute: CalendarRoute,
   ComposeRoute: ComposeRoute,
   ContactsRoute: ContactsRoute,
   DraftsRoute: DraftsRoute,

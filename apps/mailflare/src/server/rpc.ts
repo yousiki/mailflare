@@ -6,6 +6,7 @@ import { listContactsForUser } from "./contacts";
 import { listDomainsForUser, provisionDomainForUser } from "./domains";
 import { listFoldersForUser } from "./folders";
 import { createMailboxForUser, listMailboxesForUser } from "./mailboxes";
+import { listCalendarEventsForUser } from "./calendar";
 import { listMessagesForUser, type MessageFolder } from "./messages";
 import { requireAdmin } from "./policy";
 
@@ -170,6 +171,26 @@ const foldersListProcedure = withSession
 		listFoldersForUser(context.env, context.session.user.id, input.mailboxId),
 	);
 
+const calendarListProcedure = withSession
+	.route({ method: "POST", path: "/calendar/list" })
+	.input(z.object({ start: z.coerce.date().optional(), end: z.coerce.date().optional() }))
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				title: z.string(),
+				description: z.string(),
+				location: z.string(),
+				startsAt: z.date(),
+				endsAt: z.date(),
+				attendees: z.array(z.string()),
+			}),
+		),
+	)
+	.handler(({ context, input }) =>
+		listCalendarEventsForUser(context.env, context.session.user.id, input.start, input.end),
+	);
+
 export const rpcRouter = rpc.router({
 	health: healthProcedure,
 	auth: { me: authMeProcedure },
@@ -177,6 +198,7 @@ export const rpcRouter = rpc.router({
 	domains: { list: domainListProcedure, add: domainAddProcedure },
 	messages: { list: messageListProcedure, send: messageSendProcedure },
 	contacts: { list: contactsListProcedure },
+	calendar: { list: calendarListProcedure },
 	folders: { list: foldersListProcedure },
 });
 
