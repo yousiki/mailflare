@@ -70,8 +70,6 @@ jobs:
       GITHUB_UPDATE_TOKEN: ${{ secrets.GITHUB_UPDATE_TOKEN }}
       GITHUB_UPDATE_REF: ${{ vars.GITHUB_UPDATE_REF }}
       GITHUB_UPDATE_REPO: ${{ vars.GITHUB_UPDATE_REPO }}
-      CF_EMAIL: ${{ secrets.CF_EMAIL }}
-      CF_API_KEY: ${{ secrets.CF_API_KEY }}
       MAILFLARE_DOMAIN: ${{ vars.MAILFLARE_DOMAIN }}
       CF_EMAIL_WORKER_NAME: ${{ vars.CF_EMAIL_WORKER_NAME || 'mailflare' }}
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
@@ -113,6 +111,9 @@ jobs:
           set -euo pipefail
           [[ "$PURGE_CONFIRMATION" == "true" ]]
           echo "Purging only exact Mailflare resource names: worker mailflare, database mailflare, bucket mailflare-raw, queues mailflare-inbound/mailflare-outbound."
+          for queue in mailflare-inbound mailflare-outbound; do
+            bunx wrangler queues consumer remove "$queue" mailflare || true
+          done
           bunx wrangler delete mailflare --force
           bunx wrangler d1 delete mailflare --skip-confirmation || true
           bunx wrangler r2 bucket delete mailflare-raw || true
