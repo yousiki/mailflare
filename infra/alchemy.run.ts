@@ -14,7 +14,7 @@ export default Alchemy.Stack(
   Effect.gen(function*() {
     const database = yield* Cloudflare.D1.Database("MailflareDatabase", {
       name: "mailflare",
-      migrations: "drizzle/migrations",
+      migrations: "drizzle/alchemy-migrations",
       jurisdiction: "default",
     });
     const rawMail = yield* Cloudflare.R2.Bucket("MailflareRawMail", {
