@@ -95,13 +95,17 @@ export default {
 		if (pathname.startsWith("/api/rpc")) return handleRpc(request, env);
 
 		const isModernRoute =
-			modernRoutes[pathname] || pathname.startsWith("/admin/") || pathname.startsWith("/settings/");
+			modernRoutes[pathname] ||
+			pathname.startsWith("/admin/") ||
+			pathname.startsWith("/settings/") ||
+			pathname.startsWith("/inbox/");
 		if (!isModernRoute) return new Response("Not Found", { status: 404 });
 
 		const isProtectedRoute =
 			protectedRoutes[pathname] ||
 			pathname.startsWith("/admin/") ||
-			pathname.startsWith("/settings/");
+			pathname.startsWith("/settings/") ||
+			pathname.startsWith("/inbox/");
 		if (isProtectedRoute && !(await hasSession(request, env))) {
 			return Response.redirect(new URL("/login", request.url), 302);
 		}

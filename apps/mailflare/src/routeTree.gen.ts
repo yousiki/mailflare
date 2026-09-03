@@ -31,6 +31,8 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminBackupsRouteImport } from './routes/admin/backups'
 import { Route as AdminDomainsRouteImport } from './routes/admin/domains'
 import { Route as AdminMailboxesRouteImport } from './routes/admin/mailboxes'
+import { Route as InboxIndexRouteImport } from './routes/inbox/index'
+import { Route as InboxMessageIdRouteImport } from './routes/inbox/$messageId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -142,6 +144,16 @@ const AdminMailboxesRoute = AdminMailboxesRouteImport.update({
   path: '/mailboxes',
   getParentRoute: () => AdminRoute,
 } as any)
+const InboxIndexRoute = InboxIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => InboxRoute,
+} as any)
+const InboxMessageIdRoute = InboxMessageIdRouteImport.update({
+  id: '/$messageId',
+  path: '/$messageId',
+  getParentRoute: () => InboxRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -152,7 +164,7 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
   '/folders': typeof FoldersRoute
-  '/inbox': typeof InboxRoute
+  '/inbox': typeof InboxRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/sent': typeof SentRoute
@@ -165,7 +177,9 @@ export interface FileRoutesByFullPath {
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/inbox/$messageId': typeof InboxMessageIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/inbox/': typeof InboxIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -175,7 +189,6 @@ export interface FileRoutesByTo {
   '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
   '/folders': typeof FoldersRoute
-  '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/sent': typeof SentRoute
@@ -188,7 +201,9 @@ export interface FileRoutesByTo {
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/inbox/$messageId': typeof InboxMessageIdRoute
   '/admin': typeof AdminIndexRoute
+  '/inbox': typeof InboxIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -200,7 +215,7 @@ export interface FileRoutesById {
   '/contacts': typeof ContactsRoute
   '/drafts': typeof DraftsRoute
   '/folders': typeof FoldersRoute
-  '/inbox': typeof InboxRoute
+  '/inbox': typeof InboxRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/sent': typeof SentRoute
@@ -213,7 +228,9 @@ export interface FileRoutesById {
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/domains': typeof AdminDomainsRoute
   '/admin/mailboxes': typeof AdminMailboxesRoute
+  '/inbox/$messageId': typeof InboxMessageIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/inbox/': typeof InboxIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -239,7 +256,9 @@ export interface FileRouteTypes {
     | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/inbox/$messageId'
     | '/admin/'
+    | '/inbox/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -249,7 +268,6 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/drafts'
     | '/folders'
-    | '/inbox'
     | '/login'
     | '/register'
     | '/sent'
@@ -262,7 +280,9 @@ export interface FileRouteTypes {
     | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/inbox/$messageId'
     | '/admin'
+    | '/inbox'
   id:
     | '__root__'
     | '/'
@@ -286,7 +306,9 @@ export interface FileRouteTypes {
     | '/admin/backups'
     | '/admin/domains'
     | '/admin/mailboxes'
+    | '/inbox/$messageId'
     | '/admin/'
+    | '/inbox/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -298,7 +320,7 @@ export interface RootRouteChildren {
   ContactsRoute: typeof ContactsRoute
   DraftsRoute: typeof DraftsRoute
   FoldersRoute: typeof FoldersRoute
-  InboxRoute: typeof InboxRoute
+  InboxRoute: typeof InboxRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   SentRoute: typeof SentRoute
@@ -466,6 +488,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMailboxesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/inbox/': {
+      id: '/inbox/'
+      path: '/'
+      fullPath: '/inbox/'
+      preLoaderRoute: typeof InboxIndexRouteImport
+      parentRoute: typeof InboxRoute
+    }
+    '/inbox/$messageId': {
+      id: '/inbox/$messageId'
+      path: '/$messageId'
+      fullPath: '/inbox/$messageId'
+      preLoaderRoute: typeof InboxMessageIdRouteImport
+      parentRoute: typeof InboxRoute
+    }
   }
 }
 
@@ -485,6 +521,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface InboxRouteChildren {
+  InboxMessageIdRoute: typeof InboxMessageIdRoute
+  InboxIndexRoute: typeof InboxIndexRoute
+}
+
+const InboxRouteChildren: InboxRouteChildren = {
+  InboxMessageIdRoute: InboxMessageIdRoute,
+  InboxIndexRoute: InboxIndexRoute,
+}
+
+const InboxRouteWithChildren = InboxRoute._addFileChildren(InboxRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -494,7 +542,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactsRoute: ContactsRoute,
   DraftsRoute: DraftsRoute,
   FoldersRoute: FoldersRoute,
-  InboxRoute: InboxRoute,
+  InboxRoute: InboxRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   SentRoute: SentRoute,

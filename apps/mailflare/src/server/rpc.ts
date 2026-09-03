@@ -2,20 +2,22 @@ import { ORPCError, os } from "@orpc/server";
 import { z } from "zod";
 import { sendEmail } from "../../../../src/lib/email/send";
 import { createMailflareAuth } from "./auth";
+import { listBackupsForUser, startBackupForUser } from "./backups";
+import { listCalendarEventsForUser } from "./calendar";
 import { listContactsForUser } from "./contacts";
 import { listDomainsForUser, provisionDomainForUser } from "./domains";
 import { listFoldersForUser } from "./folders";
 import { createMailboxForUser, listMailboxesForUser } from "./mailboxes";
-import { listCalendarEventsForUser } from "./calendar";
-import { listBackupsForUser, startBackupForUser } from "./backups";
+import {
+	getMessageForUser,
+	markMessageRead,
+	toggleMessageStar,
+	updateMessageStatus,
+} from "./message-actions";
 import { listMessagesForUser, type MessageFolder } from "./messages";
 import { requireAdmin } from "./policy";
 
-export type MailflareRpcContext = {
-	env: CloudflareEnv;
-	request: Request;
-};
-
+export type MailflareRpcContext = { env: CloudflareEnv; request: Request };
 const rpc = os.$context<MailflareRpcContext>();
 const emptyInput = z.object({});
 const sessionUser = z.object({ id: z.string(), email: z.email(), name: z.string() });
@@ -128,6 +130,79 @@ const messageListProcedure = withSession
 		}),
 	);
 
+const messageGetProcedure = withSession
+	.route({ method: "POST", path: "/messages/get" })
+	.input(z.object({ messageId: z.string().min(1) }))
+	.output(
+		z
+			.object({
+				id: z.string(),
+				from: z.string(),
+				to: z.string(),
+				subject: z.string(),
+				snippet: z.string(),
+				textBody: z.string().nullable(),
+				htmlBody: z.string().nullable(),
+				direction: z.enum(["inbound", "outbound"]),
+				status: z.string(),
+				read: z.boolean(),
+				starred: z.boolean(),
+				createdAt: z.date(),
+			})
+			.nullable(),
+	)
+	.handler(({ context, input }) =>
+		getMessageForUser(context.env, context.session.user.id, input.messageId),
+	);
+
+const messageReadProcedure = withSession
+	.route({ method: "POST", path: "/messages/read" })
+	.input(z.object({ messageId: z.string().min(1), read: z.boolean().default(true) }))
+	.output(z.object({ success: z.boolean() }))
+	.handler(async ({ context, input }) => ({
+		success: await markMessageRead(
+			context.env,
+			context.session.user.id,
+			input.messageId,
+			input.read,
+		),
+	}));
+
+const messageStarProcedure = withSession
+	.route({ method: "POST", path: "/messages/star" })
+	.input(z.object({ messageId: z.string().min(1) }))
+	.output(z.object({ starred: z.boolean().nullable() }))
+	.handler(async ({ context, input }) => ({
+		starred: await toggleMessageStar(context.env, context.session.user.id, input.messageId),
+	}));
+
+const messageStatusProcedure = withSession
+	.route({ method: "POST", path: "/messages/status" })
+	.input(
+		z.object({
+			messageId: z.string().min(1),
+			status: z.enum([
+				"received",
+				"sent",
+				"draft",
+				"queued",
+				"failed",
+				"archived",
+				"trash",
+				"spam",
+			]),
+		}),
+	)
+	.output(z.object({ success: z.boolean() }))
+	.handler(async ({ context, input }) => ({
+		success: await updateMessageStatus(
+			context.env,
+			context.session.user.id,
+			input.messageId,
+			input.status,
+		),
+	}));
+
 const messageSendProcedure = withSession
 	.route({ method: "POST", path: "/messages/send" })
 	.input(
@@ -218,12 +293,20 @@ const backupStartProcedure = withAdmin
 	.handler(async ({ context }) => ({
 		backupId: await startBackupForUser(context.env, context.session.user.id),
 	}));
+
 export const rpcRouter = rpc.router({
 	health: healthProcedure,
 	auth: { me: authMeProcedure },
 	mailboxes: { list: mailboxListProcedure, create: mailboxCreateProcedure },
 	domains: { list: domainListProcedure, add: domainAddProcedure },
-	messages: { list: messageListProcedure, send: messageSendProcedure },
+	messages: {
+		list: messageListProcedure,
+		get: messageGetProcedure,
+		read: messageReadProcedure,
+		star: messageStarProcedure,
+		status: messageStatusProcedure,
+		send: messageSendProcedure,
+	},
 	contacts: { list: contactsListProcedure },
 	calendar: { list: calendarListProcedure },
 	backups: { list: backupsListProcedure, start: backupStartProcedure },
