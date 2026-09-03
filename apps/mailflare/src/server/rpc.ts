@@ -1,9 +1,10 @@
 import { ORPCError, os } from "@orpc/server";
 import { z } from "zod";
+import { sendEmail } from "../../../../src/lib/email/send";
 import { createMailflareAuth } from "./auth";
 import { provisionDomainForUser } from "./domains";
-import { createMailboxForUser, listMailboxesForUser } from "./mailboxes";
-import { sendEmail } from "../../../../src/lib/email/send";
+import { listMailboxesForUser, createMailboxForUser } from "./mailboxes";
+import { listMessagesForUser } from "./messages";
 
 export type MailflareRpcContext = {
 	env: CloudflareEnv;
@@ -77,17 +78,39 @@ export const mailboxCreateProcedure = withSession
 		createMailboxForUser(context.env, context.session.user.id, input),
 	);
 
-const sendInput = z.object({
-	mailboxId: z.string().min(1),
-	from: z.string().min(3).max(320),
-	to: z.email(),
-	subject: z.string().max(998),
-	text: z.string().max(1_000_000),
-});
+const messageListProcedure = withSession
+	.route({ method: "POST", path: "/messages/list" })
+	.input(z.object({ mailboxId: z.string().optional() }))
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				from: z.string(),
+				to: z.string(),
+				subject: z.string(),
+				snippet: z.string(),
+				direction: z.enum(["inbound", "outbound"]),
+				read: z.boolean(),
+				starred: z.boolean(),
+				createdAt: z.date(),
+			}),
+		),
+	)
+	.handler(({ context, input }) =>
+		listMessagesForUser(context.env, context.session.user.id, input.mailboxId),
+	);
 
-export const messageSendProcedure = withSession
+const messageSendProcedure = withSession
 	.route({ method: "POST", path: "/messages/send" })
-	.input(sendInput)
+	.input(
+		z.object({
+			mailboxId: z.string().min(1),
+			from: z.string().min(3).max(320),
+			to: z.email(),
+			subject: z.string().max(998),
+			text: z.string().max(1_000_000),
+		}),
+	)
 	.output(z.object({ messageId: z.string() }))
 	.handler(({ context, input }) =>
 		sendEmail(context.env, { ...input, userId: context.session.user.id }),
@@ -98,7 +121,7 @@ export const rpcRouter = rpc.router({
 	auth: { me: authMeProcedure },
 	mailboxes: { list: mailboxListProcedure, create: mailboxCreateProcedure },
 	domains: { add: domainAddProcedure },
-	messages: { send: messageSendProcedure },
+	messages: { list: messageListProcedure, send: messageSendProcedure },
 });
 
 export type MailflareRpcRouter = typeof rpcRouter;
