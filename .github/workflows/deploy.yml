@@ -114,7 +114,14 @@ jobs:
           for queue in mailflare-inbound mailflare-outbound; do
             bunx wrangler queues consumer remove "$queue" mailflare || true
           done
-          bunx wrangler delete mailflare --force
+          worker_status="$(curl --silent --show-error --output "$RUNNER_TEMP/mailflare-worker-delete.json" --write-out "%{http_code}" --request DELETE \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/services/mailflare")"
+          if [[ "$worker_status" != "200" && "$worker_status" != "404" ]]; then
+            cat "$RUNNER_TEMP/mailflare-worker-delete.json"
+            exit 1
+          fi
           bunx wrangler d1 delete mailflare --skip-confirmation || true
           bunx wrangler r2 bucket delete mailflare-raw || true
           bunx wrangler queues delete mailflare-inbound || true
