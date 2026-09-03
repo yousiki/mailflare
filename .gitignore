@@ -57,3 +57,6 @@ mailflare-landing
 /.alchemy/
 /.turbo/
 /apps/*/dist/
+**/node_modules/
+**/.turbo/
+**/.vite/

@@ -1,5 +1,0 @@
-$ oxfmt --check src/routes src/server vite.config.ts
-Checking formatting...
-
-All matched files use the correct format.
-Finished in 14ms on 18 files using 16 threads.
