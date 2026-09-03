@@ -60,8 +60,14 @@ export default {
 			return app.fetch(request, env);
 		}
 		if (pathname.startsWith("/api/rpc")) return handleRpc(request, env);
-		if (modernRoutes[pathname]) {
-			if (protectedRoutes[pathname] && !(await hasSession(request, env))) {
+		const isModernRoute =
+			modernRoutes[pathname] || pathname.startsWith("/admin/") || pathname.startsWith("/settings/");
+		if (isModernRoute) {
+			const isProtectedRoute =
+				protectedRoutes[pathname] ||
+				pathname.startsWith("/admin/") ||
+				pathname.startsWith("/settings/");
+			if (isProtectedRoute && !(await hasSession(request, env))) {
 				return Response.redirect(new URL("/login", request.url), 302);
 			}
 			return startHandler.fetch(request, env, ctx);

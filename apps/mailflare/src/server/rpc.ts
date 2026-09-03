@@ -2,8 +2,8 @@ import { ORPCError, os } from "@orpc/server";
 import { z } from "zod";
 import { sendEmail } from "../../../../src/lib/email/send";
 import { createMailflareAuth } from "./auth";
-import { provisionDomainForUser } from "./domains";
-import { listMailboxesForUser, createMailboxForUser } from "./mailboxes";
+import { listDomainsForUser, provisionDomainForUser } from "./domains";
+import { createMailboxForUser, listMailboxesForUser } from "./mailboxes";
 import { listMessagesForUser } from "./messages";
 
 export type MailflareRpcContext = {
@@ -49,6 +49,20 @@ export const mailboxListProcedure = withSession
 	.input(emptyInput)
 	.output(z.array(z.object({ id: z.string(), email: z.email(), name: z.string() })))
 	.handler(({ context }) => listMailboxesForUser(context.env, context.session.user.id));
+
+export const domainListProcedure = withSession
+	.route({ method: "POST", path: "/domains/list" })
+	.input(emptyInput)
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				hostname: z.string(),
+				status: z.enum(["pending", "active", "error"]),
+			}),
+		),
+	)
+	.handler(({ context }) => listDomainsForUser(context.env, context.session.user.id));
 
 export const domainAddProcedure = withSession
 	.route({ method: "POST", path: "/domains/add" })
@@ -120,7 +134,7 @@ export const rpcRouter = rpc.router({
 	health: healthProcedure,
 	auth: { me: authMeProcedure },
 	mailboxes: { list: mailboxListProcedure, create: mailboxCreateProcedure },
-	domains: { add: domainAddProcedure },
+	domains: { list: domainListProcedure, add: domainAddProcedure },
 	messages: { list: messageListProcedure, send: messageSendProcedure },
 });
 
