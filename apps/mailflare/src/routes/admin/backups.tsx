@@ -1,17 +1,33 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "~/client/orpc";
 
 export const Route = createFileRoute("/admin/backups")({ component: BackupsPage });
 
 function BackupsPage() {
 	const backups = useQuery(orpc.backups.list.queryOptions({ input: {} }));
+	const startBackup = useMutation(
+		orpc.backups.start.mutationOptions({
+			onSuccess: () => backups.refetch(),
+		}),
+	);
 
 	return (
 		<main className="page-shell narrow">
 			<p className="eyebrow">Administration</p>
-			<h1>Backups</h1>
+			<div className="page-heading">
+				<h1>Backups</h1>
+				<button
+					className="button primary"
+					type="button"
+					onClick={() => startBackup.mutate({})}
+					disabled={startBackup.isPending}
+				>
+					{startBackup.isPending ? "Starting…" : "Start backup"}
+				</button>
+			</div>
 			{backups.error && <p role="alert">{backups.error.message}</p>}
+			{startBackup.error && <p role="alert">{startBackup.error.message}</p>}
 			{backups.data?.length ? (
 				<section className="card message-list" aria-label="Database backups">
 					{backups.data.map((backup) => (
@@ -30,7 +46,9 @@ function BackupsPage() {
 			) : (
 				<section className="card empty-state">
 					<h2>{backups.isPending ? "Loading backups…" : "No backups"}</h2>
-					<p>{backups.isPending ? "" : "Completed backups will appear here."}</p>
+					<p>
+						{backups.isPending ? "" : "Start a backup to create a protected database snapshot."}
+					</p>
 				</section>
 			)}
 		</main>

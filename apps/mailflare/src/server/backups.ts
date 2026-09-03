@@ -1,6 +1,8 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "../../../../src/db";
 import { backups } from "../../../../src/db/schema";
+import { createBackupRecord } from "../../../../src/lib/backups/service";
+import { getBackupWorkflowBinding } from "../../../../src/lib/backups/utils";
 
 export type BackupSummary = {
 	id: string;
@@ -32,4 +34,22 @@ export async function listBackupsForUser(
 		.where(eq(backups.createdByUserId, userId))
 		.orderBy(desc(backups.createdAt));
 	return rows;
+}
+
+export async function startBackupForUser(env: CloudflareEnv, userId: string): Promise<string> {
+	const backupId = await createBackupRecord(env, "manual", userId);
+	try {
+		await getBackupWorkflowBinding(env).create({
+			id: `database-backup-${backupId}`,
+			params: { backupId, force: true },
+		});
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Failed to start backup";
+		await getDb(env)
+			.update(backups)
+			.set({ status: "failed", error: message, completedAt: new Date() })
+			.where(eq(backups.id, backupId));
+		throw error;
+	}
+	return backupId;
 }

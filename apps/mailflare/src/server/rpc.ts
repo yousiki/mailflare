@@ -7,7 +7,7 @@ import { listDomainsForUser, provisionDomainForUser } from "./domains";
 import { listFoldersForUser } from "./folders";
 import { createMailboxForUser, listMailboxesForUser } from "./mailboxes";
 import { listCalendarEventsForUser } from "./calendar";
-import { listBackupsForUser } from "./backups";
+import { listBackupsForUser, startBackupForUser } from "./backups";
 import { listMessagesForUser, type MessageFolder } from "./messages";
 import { requireAdmin } from "./policy";
 
@@ -211,6 +211,13 @@ const backupsListProcedure = withAdmin
 	)
 	.handler(({ context }) => listBackupsForUser(context.env, context.session.user.id));
 
+const backupStartProcedure = withAdmin
+	.route({ method: "POST", path: "/backups/start" })
+	.input(emptyInput)
+	.output(z.object({ backupId: z.string() }))
+	.handler(async ({ context }) => ({
+		backupId: await startBackupForUser(context.env, context.session.user.id),
+	}));
 export const rpcRouter = rpc.router({
 	health: healthProcedure,
 	auth: { me: authMeProcedure },
@@ -219,7 +226,7 @@ export const rpcRouter = rpc.router({
 	messages: { list: messageListProcedure, send: messageSendProcedure },
 	contacts: { list: contactsListProcedure },
 	calendar: { list: calendarListProcedure },
-	backups: { list: backupsListProcedure },
+	backups: { list: backupsListProcedure, start: backupStartProcedure },
 	folders: { list: foldersListProcedure },
 });
 
