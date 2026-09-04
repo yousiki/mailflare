@@ -1,28 +1,29 @@
 const MIGRATION_NAMES = [
-	"0000_flowery_smasher.sql",
-	"0001_add_reset_email.sql",
-	"0002_add_message_read.sql",
-	"0003_add_contacts.sql",
-	"0004_add_accounts.sql",
-	"0005_add_folders.sql",
-	"0006_add_rule_conditions.sql",
-	"0007_add_shared_mailboxes.sql",
-	"0008_add_message_attachments.sql",
-	"0009_add_backups.sql",
-	"0010_hard_squirrel_girl.sql",
-	"0011_add_folder_colors.sql",
-	"0012_add_app_settings.sql",
-	"0013_add_license_settings.sql",
-	"0014_add_account_permissions.sql",
-	"0015_add_forwarding_email.sql",
-	"0016_add_message_snooze.sql",
-	"0017_add_message_star.sql",
-	"0018_add_mailbox_domain_aliases.sql",
-	"0019_merge_message_bodies.sql",
-	"0020_add_calendar_templates_schedule.sql",
-	"0021_add_mailbox_signature.sql",
-	"0022_add_mailbox_auto_reply.sql",
-	"0023_add_better_auth.sql",
+  "0000_flowery_smasher.sql",
+  "0001_add_reset_email.sql",
+  "0002_add_message_read.sql",
+  "0003_add_contacts.sql",
+  "0004_add_accounts.sql",
+  "0005_add_folders.sql",
+  "0006_add_rule_conditions.sql",
+  "0007_add_shared_mailboxes.sql",
+  "0008_add_message_attachments.sql",
+  "0009_add_backups.sql",
+  "0010_hard_squirrel_girl.sql",
+  "0011_add_folder_colors.sql",
+  "0012_add_app_settings.sql",
+  "0013_add_license_settings.sql",
+  "0014_add_account_permissions.sql",
+  "0015_add_forwarding_email.sql",
+  "0016_add_message_snooze.sql",
+  "0017_add_message_star.sql",
+  "0018_add_mailbox_domain_aliases.sql",
+  "0019_merge_message_bodies.sql",
+  "0020_add_calendar_templates_schedule.sql",
+  "0021_add_mailbox_signature.sql",
+  "0022_add_mailbox_auto_reply.sql",
+  "0023_add_better_auth.sql",
+  "0024_add_better_auth_account_issuer.sql",
 ];
 
 const INITIAL_SCHEMA_SQL = `
@@ -78,31 +79,32 @@ CREATE TABLE IF NOT EXISTS license_settings (id text PRIMARY KEY NOT NULL, insta
 CREATE TABLE IF NOT EXISTS user (id text PRIMARY KEY NOT NULL, name text NOT NULL, email text NOT NULL, email_verified integer DEFAULT false NOT NULL, image text, created_at integer NOT NULL, updated_at integer NOT NULL);
 CREATE UNIQUE INDEX IF NOT EXISTS user_email_idx ON user(email);
 CREATE TABLE IF NOT EXISTS session (id text PRIMARY KEY NOT NULL, expires_at integer NOT NULL, token text NOT NULL UNIQUE, created_at integer NOT NULL, updated_at integer NOT NULL, ip_address text, user_agent text, user_id text NOT NULL REFERENCES user(id) ON DELETE cascade);
-CREATE TABLE IF NOT EXISTS account (id text PRIMARY KEY NOT NULL, account_id text NOT NULL, provider_id text NOT NULL, user_id text NOT NULL REFERENCES user(id) ON DELETE cascade, access_token text, refresh_token text, id_token text, access_token_expires_at integer, refresh_token_expires_at integer, scope text, password text, created_at integer NOT NULL, updated_at integer NOT NULL);
+CREATE TABLE IF NOT EXISTS account (id text PRIMARY KEY NOT NULL, account_id text NOT NULL, provider_id text NOT NULL, issuer text DEFAULT 'local:credential' NOT NULL, user_id text NOT NULL REFERENCES user(id) ON DELETE cascade, access_token text, refresh_token text, id_token text, access_token_expires_at integer, refresh_token_expires_at integer, scope text, password text, created_at integer NOT NULL, updated_at integer NOT NULL);
 CREATE TABLE IF NOT EXISTS verification (id text PRIMARY KEY NOT NULL, identifier text NOT NULL, value text NOT NULL, expires_at integer NOT NULL, created_at integer NOT NULL, updated_at integer NOT NULL);
 CREATE TABLE IF NOT EXISTS d1_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL);
 `;
 
 export async function migrateCleanDatabase(db: D1Database): Promise<boolean> {
-	const existing = await db
-		.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT IN ('d1_migrations', 'd1_kv')")
-		.all<{ name: string }>();
-	if (existing.results.length > 0) {
-		const tableNames = new Set(existing.results.map((table) => table.name));
-		if (tableNames.has("users") && tableNames.has("domains")) return false;
-		throw new Error(
-			"The D1 database is not empty, but the Mailflare schema is incomplete. Apply the committed D1 migrations before continuing setup.",
-		);
-	}
+  const existing = await db
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT IN ('d1_migrations', 'd1_kv')",
+    )
+    .all<{ name: string }>();
+  if (existing.results.length > 0) {
+    const tableNames = new Set(existing.results.map((table) => table.name));
+    if (tableNames.has("users") && tableNames.has("domains")) return false;
+    throw new Error(
+      "The D1 database is not empty, but the Mailflare schema is incomplete. Apply the committed D1 migrations before continuing setup.",
+    );
+  }
 
-	const schemaStatements = INITIAL_SCHEMA_SQL
-		.split(";")
-		.map((statement) => statement.trim())
-		.filter(Boolean)
-		.map((statement) => db.prepare(statement));
-	const migrationStatements = MIGRATION_NAMES.map((name) =>
-		db.prepare("INSERT OR IGNORE INTO d1_migrations (name) VALUES (?)").bind(name),
-	);
-	await db.batch([...schemaStatements, ...migrationStatements]);
-	return true;
+  const schemaStatements = INITIAL_SCHEMA_SQL.split(";")
+    .map((statement) => statement.trim())
+    .filter(Boolean)
+    .map((statement) => db.prepare(statement));
+  const migrationStatements = MIGRATION_NAMES.map((name) =>
+    db.prepare("INSERT OR IGNORE INTO d1_migrations (name) VALUES (?)").bind(name),
+  );
+  await db.batch([...schemaStatements, ...migrationStatements]);
+  return true;
 }

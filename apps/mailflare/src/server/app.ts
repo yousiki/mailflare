@@ -2,8 +2,10 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { createMailflareAuth } from "./auth";
 import {
+	assertInitialSetupAvailable,
 	createInitialAdministrator,
 	ensureApplicationUser,
+	removeIncompleteAuthUser,
 	SetupAlreadyCompletedError,
 } from "./setup";
 import { rejectCrossOriginMutation } from "./request-security";
@@ -54,8 +56,11 @@ export const app = new Hono<MailflareContext>()
 	.post("/api/setup/admin", async (c) => {
 		const blocked = rejectCrossOriginMutation(c.req.raw);
 		if (blocked) return blocked;
+		let input: z.infer<typeof setupInput> | undefined;
 		try {
-			const input = setupInput.parse(await c.req.json());
+			input = setupInput.parse(await c.req.json());
+			await assertInitialSetupAvailable(c.env);
+			await removeIncompleteAuthUser(c.env, input.email);
 			const auth = createMailflareAuth(c.env);
 			const result = await auth.api.signUpEmail({
 				returnHeaders: true,
@@ -70,6 +75,14 @@ export const app = new Hono<MailflareContext>()
 			result.headers.forEach((value, key) => response.headers.append(key, value));
 			return response;
 		} catch (error) {
+			if (input) {
+				try {
+					await removeIncompleteAuthUser(c.env, input.email);
+				} catch (cleanupError) {
+					console.error("Incomplete setup cleanup failed", cleanupError);
+				}
+			}
+			console.error("Administrator setup failed", error);
 			if (error instanceof SetupAlreadyCompletedError) {
 				return c.json({ error: error.message }, 409);
 			}
